@@ -25,7 +25,6 @@ AIScripter is a production-ready, high-performance monorepository that integrate
 </p>
 
 ---
----
 
 ## ⚡ Key Features
 
@@ -40,10 +39,10 @@ AIScripter is a production-ready, high-performance monorepository that integrate
 
 ```text
 AIScripter/
-├── ScripterAE/          # After Effects CEP Extension (HTML/CSS/JS/JSX)
+├── ScripterAE/            # After Effects CEP Extension (HTML/CSS/JS/JSX)
 │   ├── main.js            # Main frontend script orchestration
 │   └── ...
-├── ScripterResolve/           # DaVinci Resolve Integration App (PySide6)
+├── ScripterResolve/       # DaVinci Resolve Integration App (PySide6)
 │   ├── run.py             # Main PySide6 UI entry point & DLL redirection
 │   └── davinci_integration/
 ├── Backend/               # Pure Python AI Core Logic
@@ -54,11 +53,15 @@ AIScripter/
 ├── install.bat            # Dynamic components installer script
 └── README.md
 
+
+
 💻 System Requirements
 
     OS: Windows 10 / 11 (64-bit)
 
-    Host Applications: * Adobe After Effects (with CEP extensions support)
+    Host Applications:
+
+        Adobe After Effects (with CEP extensions support)
 
         Blackmagic Design DaVinci Resolve
 
@@ -66,7 +69,7 @@ AIScripter/
 
 🔧 Installation & Deployment
 
-The repository uses a automated installation script that dynamically sets up the environment from official distribution networks to keep the initial footprint lightweight.
+The repository uses an automated installation script that dynamically sets up the environment from official distribution networks to keep the initial footprint lightweight.
 
     Clone or download this monorepository to your local machine.
 
