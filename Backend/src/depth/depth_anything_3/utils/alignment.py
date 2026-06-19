@@ -1,16 +1,16 @@
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 """
 Alignment utilities for depth estimation and metric scaling.
@@ -45,7 +45,7 @@ def least_squares_scale_scalar(
     if not a.is_floating_point() or not b.is_floating_point():
         raise TypeError("Tensors must be floating point type")
 
-    # Compute dot products for least squares solution
+    
     num = torch.dot(a.reshape(-1), b.reshape(-1))
     den = torch.dot(b.reshape(-1), b.reshape(-1)).clamp_min(eps)
     return num / den
@@ -153,7 +153,7 @@ def set_sky_regions_to_max_depth(
     """
     depth = depth.clone()
 
-    # Set sky regions to max depth and high confidence
+    
     depth[~non_sky_mask] = max_depth
     if depth_conf is not None:
         depth_conf = depth_conf.clone()

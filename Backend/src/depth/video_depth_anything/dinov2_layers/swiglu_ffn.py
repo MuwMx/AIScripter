@@ -1,8 +1,8 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-#
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+
+
+
+
+
 
 from typing import Callable, Optional
 
@@ -54,7 +54,7 @@ class SwiGLUFFNFused(SwiGLU):
     ) -> None:
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        hidden_features = (int(hidden_features * 2 / 3) + 7) 
+        hidden_features = (int(hidden_features * 2 / 3) + 7) // 8 * 8
         super().__init__(
             in_features=in_features,
             hidden_features=hidden_features,

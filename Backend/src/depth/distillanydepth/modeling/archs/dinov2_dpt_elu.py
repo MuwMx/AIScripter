@@ -29,16 +29,16 @@ class DPTDepthEstimationHead(nn.Module):
             self.projection = nn.Conv2d(features, features, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
 
         self.head = nn.Sequential(
-            nn.Conv2d(features, features 
+            nn.Conv2d(features, features // 2, kernel_size=3, stride=1, padding=1),
             nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
-            nn.Conv2d(features 
+            nn.Conv2d(features // 2, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.Conv2d(32, 1, kernel_size=1, stride=1, padding=0),
             nn.ReLU(),
         )
 
     def forward(self, hidden_states: List[torch.Tensor]) -> torch.Tensor:
-        # use last features
+        
         hidden_states = hidden_states[self.config.head_in_index]
 
         if self.projection is not None:
@@ -94,7 +94,7 @@ class Upsample2D(nn.Module):
         if norm_type == "ln_norm":
             self.norm = nn.LayerNorm(channels, eps, elementwise_affine)
         elif norm_type == "rms_norm":
-            # self.norm = RMSNorm(channels, eps, elementwise_affine)
+            
             raise NotImplementedError
         elif norm_type is None:
             self.norm = None
@@ -113,7 +113,7 @@ class Upsample2D(nn.Module):
                 kernel_size = 3
             conv = conv_cls(self.channels, self.out_channels, kernel_size=kernel_size, padding=padding, bias=bias)
 
-        # TODO(Suraj, Patrick) - clean up after weight dicts are correctly renamed
+        
         if name == "conv":
             self.conv = conv
         else:
@@ -133,30 +133,30 @@ class Upsample2D(nn.Module):
         if self.use_conv_transpose:
             return self.conv(hidden_states)
 
-        # Cast to float32 to as 'upsample_nearest2d_out_frame' op does not support bfloat16
-        # TODO(Suraj): Remove this cast once the issue is fixed in PyTorch
-        # https://github.com/pytorch/pytorch/issues/86679
+        
+        
+        
         dtype = hidden_states.dtype
         if dtype == torch.bfloat16:
             hidden_states = hidden_states.to(torch.float32)
 
-        # upsample_nearest_nhwc fails with large batch sizes. see https://github.com/huggingface/diffusers/issues/984
+        
         if hidden_states.shape[0] >= 64:
             hidden_states = hidden_states.contiguous()
 
-        # if `output_size` is passed we force the interpolation output
-        # size and do not make use of `scale_factor=2`
+        
+        
         if self.interpolate:
             if output_size is None:
                 hidden_states = F.interpolate(hidden_states, scale_factor=2.0, mode="nearest")
             else:
                 hidden_states = F.interpolate(hidden_states, size=output_size, mode="nearest")
 
-        # If the input is bfloat16, we cast back to bfloat16
+        
         if dtype == torch.bfloat16:
             hidden_states = hidden_states.to(dtype)
 
-        # TODO(Suraj, Patrick) - clean up after weight dicts are correctly renamed
+        
         if self.use_conv:
             if self.name == "conv":
                 if isinstance(self.conv, LoRACompatibleConv) and not USE_PEFT_BACKEND:
@@ -196,23 +196,23 @@ class DPTDepthEstimationHeadElu(nn.Module):
 
         features = config.fusion_hidden_size
         self.head = nn.Sequential(
-            nn.Conv2d(features, features 
+            nn.Conv2d(features, features // 2, kernel_size=3, stride=1, padding=1),
             nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
-            nn.Conv2d(features 
+            nn.Conv2d(features // 2, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.Conv2d(32, 1, kernel_size=1, stride=1, padding=0),
             nn.ELU(),
         )
 
     def forward(self, hidden_states: List[torch.Tensor]) -> torch.Tensor:
-        # use last features
+        
         hidden_states = hidden_states[self.config.head_in_index]
 
         if self.projection is not None:
             hidden_states = self.projection(hidden_states)
             hidden_states = nn.ReLU()(hidden_states)
 
-        predicted_depth = self.head(hidden_states) + 1 # range from [0, +inf]
+        predicted_depth = self.head(hidden_states) + 1 
 
         predicted_depth = predicted_depth.squeeze(dim=1)
 
@@ -246,25 +246,25 @@ class DPTNeckHeadForUnet(DPTPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
 
-        # self.backbone = None
-        # if config.backbone_config is not None and config.is_hybrid is False:
-        #     self.backbone = load_backbone(config)
-        # else:
-        #     self.dpt = DPTModel(config, add_pooling_layer=False)
+        
+        
+        
+        
+        
 
         self.feature_upsample_0 = Upsample2D(channels=config.neck_hidden_sizes[0], use_conv=True)
         self.feature_upsample_1 = Upsample2D(channels=config.neck_hidden_sizes[1], use_conv=True)
         self.feature_upsample_2 = Upsample2D(channels=config.neck_hidden_sizes[2], use_conv=True)
         self.feature_upsample_3 = Upsample2D(channels=config.neck_hidden_sizes[3], use_conv=True)
 
-        # Neck
+        
         self.neck = DPTNeck(config)
         self.neck.reassemble_stage = None
 
-        # Depth estimation head
+        
         self.head = DPTDepthEstimationHead(config)
 
-        # Initialize weights and apply final processing
+        
         self.post_init()
 
     @add_start_docstrings_to_model_forward(DPT_INPUTS_DOCSTRING)
@@ -298,14 +298,14 @@ class DPTNeckHeadForUnet(DPTPreTrainedModel):
         >>> image_processor = AutoImageProcessor.from_pretrained("Intel/dpt-large")
         >>> model = DPTForDepthEstimation.from_pretrained("Intel/dpt-large")
 
-        >>> # prepare image for the model
+        >>> 
         >>> inputs = image_processor(images=image, return_tensors="pt")
 
         >>> with torch.no_grad():
         ...     outputs = model(**inputs)
         ...     predicted_depth = outputs.predicted_depth
 
-        >>> # interpolate to original size
+        >>> 
         >>> prediction = torch.nn.functional.interpolate(
         ...     predicted_depth.unsqueeze(1),
         ...     size=image.size[::-1],
@@ -313,7 +313,7 @@ class DPTNeckHeadForUnet(DPTPreTrainedModel):
         ...     align_corners=False,
         ... )
 
-        >>> # visualize the prediction
+        >>> 
         >>> output = prediction.squeeze().cpu().numpy()
         >>> formatted = (output * 255 / np.max(output)).astype("uint8")
         >>> depth = Image.fromarray(formatted)
@@ -324,40 +324,40 @@ class DPTNeckHeadForUnet(DPTPreTrainedModel):
         )
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
 
-        # if self.backbone is not None:
-        #     outputs = self.backbone.forward_with_filtered_kwargs(
-        #         pixel_values, output_hidden_states=output_hidden_states, output_attentions=output_attentions
-        #     )
-        #     hidden_states = outputs.feature_maps
-        # else:
-        #     outputs = self.dpt(
-        #         pixel_values,
-        #         head_mask=head_mask,
-        #         output_attentions=output_attentions,
-        #         output_hidden_states=True,  # we need the intermediate hidden states
-        #         return_dict=return_dict,
-        #     )
-        #     hidden_states = outputs.hidden_states if return_dict else outputs[1]
-        #     # only keep certain features based on config.backbone_out_indices
-        #     # note that the hidden_states also include the initial embeddings
-        #     if not self.config.is_hybrid:
-        #         hidden_states = [
-        #             feature for idx, feature in enumerate(hidden_states[1:]) if idx in self.config.backbone_out_indices
-        #         ]
-        #     else:
-        #         backbone_hidden_states = outputs.intermediate_activations if return_dict else list(outputs[-1])
-        #         backbone_hidden_states.extend(
-        #             feature
-        #             for idx, feature in enumerate(hidden_states[1:])
-        #             if idx in self.config.backbone_out_indices[2:]
-        #         )
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-        #         hidden_states = backbone_hidden_states
+        
 
 
         assert len(hidden_states) == 4
 
-        # upsample hidden_states for unet
+        
         hidden_states = [getattr(self, "feature_upsample_%s" %i)(hidden_states[i]) for i in range(len(hidden_states))]
 
         patch_height, patch_width = None, None
@@ -365,8 +365,8 @@ class DPTNeckHeadForUnet(DPTPreTrainedModel):
             _, _, height, width = hidden_states[3].shape
             height *= 8; width *= 8
             patch_size = self.config.backbone_config.patch_size
-            patch_height = height 
-            patch_width = width 
+            patch_height = height // patch_size
+            patch_width = width // patch_size
 
         hidden_states = self.neck(hidden_states, patch_height, patch_width)
 
@@ -389,25 +389,25 @@ class DPTNeckHeadForUnetAfterUpsample(DPTPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
 
-        # self.backbone = None
-        # if config.backbone_config is not None and config.is_hybrid is False:
-        #     self.backbone = load_backbone(config)
-        # else:
-        #     self.dpt = DPTModel(config, add_pooling_layer=False)
+        
+        
+        
+        
+        
 
         self.feature_upsample_0 = Upsample2D(channels=config.neck_hidden_sizes[0], use_conv=True)
-        # self.feature_upsample_1 = Upsample2D(channels=config.neck_hidden_sizes[1], use_conv=True)
-        # self.feature_upsample_2 = Upsample2D(channels=config.neck_hidden_sizes[2], use_conv=True)
-        # self.feature_upsample_3 = Upsample2D(channels=config.neck_hidden_sizes[3], use_conv=True)
+        
+        
+        
 
-        # Neck
+        
         self.neck = DPTNeck(config)
         self.neck.reassemble_stage = None
 
-        # Depth estimation head
+        
         self.head = DPTDepthEstimationHead(config)
 
-        # Initialize weights and apply final processing
+        
         self.post_init()
 
     @add_start_docstrings_to_model_forward(DPT_INPUTS_DOCSTRING)
@@ -442,14 +442,14 @@ class DPTNeckHeadForUnetAfterUpsample(DPTPreTrainedModel):
         >>> image_processor = AutoImageProcessor.from_pretrained("Intel/dpt-large")
         >>> model = DPTForDepthEstimation.from_pretrained("Intel/dpt-large")
 
-        >>> # prepare image for the model
+        >>> 
         >>> inputs = image_processor(images=image, return_tensors="pt")
 
         >>> with torch.no_grad():
         ...     outputs = model(**inputs)
         ...     predicted_depth = outputs.predicted_depth
 
-        >>> # interpolate to original size
+        >>> 
         >>> prediction = torch.nn.functional.interpolate(
         ...     predicted_depth.unsqueeze(1),
         ...     size=image.size[::-1],
@@ -457,7 +457,7 @@ class DPTNeckHeadForUnetAfterUpsample(DPTPreTrainedModel):
         ...     align_corners=False,
         ... )
 
-        >>> # visualize the prediction
+        >>> 
         >>> output = prediction.squeeze().cpu().numpy()
         >>> formatted = (output * 255 / np.max(output)).astype("uint8")
         >>> depth = Image.fromarray(formatted)
@@ -468,41 +468,41 @@ class DPTNeckHeadForUnetAfterUpsample(DPTPreTrainedModel):
         )
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
 
-        # if self.backbone is not None:
-        #     outputs = self.backbone.forward_with_filtered_kwargs(
-        #         pixel_values, output_hidden_states=output_hidden_states, output_attentions=output_attentions
-        #     )
-        #     hidden_states = outputs.feature_maps
-        # else:
-        #     outputs = self.dpt(
-        #         pixel_values,
-        #         head_mask=head_mask,
-        #         output_attentions=output_attentions,
-        #         output_hidden_states=True,  # we need the intermediate hidden states
-        #         return_dict=return_dict,
-        #     )
-        #     hidden_states = outputs.hidden_states if return_dict else outputs[1]
-        #     # only keep certain features based on config.backbone_out_indices
-        #     # note that the hidden_states also include the initial embeddings
-        #     if not self.config.is_hybrid:
-        #         hidden_states = [
-        #             feature for idx, feature in enumerate(hidden_states[1:]) if idx in self.config.backbone_out_indices
-        #         ]
-        #     else:
-        #         backbone_hidden_states = outputs.intermediate_activations if return_dict else list(outputs[-1])
-        #         backbone_hidden_states.extend(
-        #             feature
-        #             for idx, feature in enumerate(hidden_states[1:])
-        #             if idx in self.config.backbone_out_indices[2:]
-        #         )
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-        #         hidden_states = backbone_hidden_states
+        
 
 
         assert len(hidden_states) == 4
 
-        # upsample hidden_states for unet
-        # hidden_states = [getattr(self, "feature_upsample_%s" %i)(hidden_states[i]) for i in range(len(hidden_states))]
+        
+        
         hidden_states[0] = self.feature_upsample_0(hidden_states[0])
 
         patch_height, patch_width = None, None
@@ -510,11 +510,11 @@ class DPTNeckHeadForUnetAfterUpsample(DPTPreTrainedModel):
             _, _, height, width = hidden_states[3].shape
             height *= 8; width *= 8
             patch_size = self.config.backbone_config.patch_size
-            patch_height = height 
-            patch_width = width 
+            patch_height = height // patch_size
+            patch_width = width // patch_size
 
-        # import pdb
-        # pdb.set_trace()
+        
+        
         hidden_states = self.neck(hidden_states, patch_height, patch_width)
 
         predicted_depth = self.head(hidden_states)
@@ -538,25 +538,25 @@ class DPTNeckHeadForUnetAfterUpsampleWithVaeDecoderWithNeck(DPTPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
 
-        # self.backbone = None
-        # if config.backbone_config is not None and config.is_hybrid is False:
-        #     self.backbone = load_backbone(config)
-        # else:
-        #     self.dpt = DPTModel(config, add_pooling_layer=False)
+        
+        
+        
+        
+        
 
-        # self.feature_upsample_0 = Upsample2D(channels=config.neck_hidden_sizes[0], use_conv=True)
-        # self.feature_upsample_1 = Upsample2D(channels=config.neck_hidden_sizes[1], use_conv=True)
-        # self.feature_upsample_2 = Upsample2D(channels=config.neck_hidden_sizes[2], use_conv=True)
-        # self.feature_upsample_3 = Upsample2D(channels=config.neck_hidden_sizes[3], use_conv=True)
+        
+        
+        
+        
 
-        # Neck
+        
         self.neck = DPTNeck(config)
         self.neck.reassemble_stage = None
 
-        # Depth estimation head
+        
         self.head = DPTDepthEstimationHead(config)
 
-        # Initialize weights and apply final processing
+        
         self.post_init()
 
     @add_start_docstrings_to_model_forward(DPT_INPUTS_DOCSTRING)
@@ -590,14 +590,14 @@ class DPTNeckHeadForUnetAfterUpsampleWithVaeDecoderWithNeck(DPTPreTrainedModel):
         >>> image_processor = AutoImageProcessor.from_pretrained("Intel/dpt-large")
         >>> model = DPTForDepthEstimation.from_pretrained("Intel/dpt-large")
 
-        >>> # prepare image for the model
+        >>> 
         >>> inputs = image_processor(images=image, return_tensors="pt")
 
         >>> with torch.no_grad():
         ...     outputs = model(**inputs)
         ...     predicted_depth = outputs.predicted_depth
 
-        >>> # interpolate to original size
+        >>> 
         >>> prediction = torch.nn.functional.interpolate(
         ...     predicted_depth.unsqueeze(1),
         ...     size=image.size[::-1],
@@ -605,7 +605,7 @@ class DPTNeckHeadForUnetAfterUpsampleWithVaeDecoderWithNeck(DPTPreTrainedModel):
         ...     align_corners=False,
         ... )
 
-        >>> # visualize the prediction
+        >>> 
         >>> output = prediction.squeeze().cpu().numpy()
         >>> formatted = (output * 255 / np.max(output)).astype("uint8")
         >>> depth = Image.fromarray(formatted)
@@ -616,53 +616,53 @@ class DPTNeckHeadForUnetAfterUpsampleWithVaeDecoderWithNeck(DPTPreTrainedModel):
         )
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
 
-        # if self.backbone is not None:
-        #     outputs = self.backbone.forward_with_filtered_kwargs(
-        #         pixel_values, output_hidden_states=output_hidden_states, output_attentions=output_attentions
-        #     )
-        #     hidden_states = outputs.feature_maps
-        # else:
-        #     outputs = self.dpt(
-        #         pixel_values,
-        #         head_mask=head_mask,
-        #         output_attentions=output_attentions,
-        #         output_hidden_states=True,  # we need the intermediate hidden states
-        #         return_dict=return_dict,
-        #     )
-        #     hidden_states = outputs.hidden_states if return_dict else outputs[1]
-        #     # only keep certain features based on config.backbone_out_indices
-        #     # note that the hidden_states also include the initial embeddings
-        #     if not self.config.is_hybrid:
-        #         hidden_states = [
-        #             feature for idx, feature in enumerate(hidden_states[1:]) if idx in self.config.backbone_out_indices
-        #         ]
-        #     else:
-        #         backbone_hidden_states = outputs.intermediate_activations if return_dict else list(outputs[-1])
-        #         backbone_hidden_states.extend(
-        #             feature
-        #             for idx, feature in enumerate(hidden_states[1:])
-        #             if idx in self.config.backbone_out_indices[2:]
-        #         )
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-        #         hidden_states = backbone_hidden_states
+        
 
 
         assert len(hidden_states) == 4
 
-        # upsample hidden_states for unet
-        # hidden_states = [getattr(self, "feature_upsample_%s" %i)(hidden_states[i]) for i in range(len(hidden_states))]
-        # hidden_states[0] = getattr(self, "feature_upsample_0")(hidden_states[0])
+        
+        
+        
 
         patch_height, patch_width = None, None
         if self.config.backbone_config is not None and self.config.is_hybrid is False:
             _, _, height, width = hidden_states[3].shape
             height *= 8; width *= 8
             patch_size = self.config.backbone_config.patch_size
-            patch_height = height 
-            patch_width = width 
+            patch_height = height // patch_size
+            patch_width = width // patch_size
 
-        # import pdb
-        # pdb.set_trace()
+        
+        
         hidden_states = self.neck(hidden_states, patch_height, patch_width)
 
         predicted_depth = self.head(hidden_states)
@@ -684,30 +684,30 @@ class DPTNeckHeadForUnetAfterUpsampleWithVaeDecoderWithoutNeck(DPTPreTrainedMode
     def __init__(self, config):
         super().__init__(config)
 
-        # self.backbone = None
-        # if config.backbone_config is not None and config.is_hybrid is False:
-        #     self.backbone = load_backbone(config)
-        # else:
-        #     self.dpt = DPTModel(config, add_pooling_layer=False)
+        
+        
+        
+        
+        
 
-        # self.feature_upsample_0 = Upsample2D(channels=config.neck_hidden_sizes[0], use_conv=True)
-        # self.feature_upsample_1 = Upsample2D(channels=config.neck_hidden_sizes[1], use_conv=True)
-        # self.feature_upsample_2 = Upsample2D(channels=config.neck_hidden_sizes[2], use_conv=True)
-        # self.feature_upsample_3 = Upsample2D(channels=config.neck_hidden_sizes[3], use_conv=True)
+        
+        
+        
+        
 
         self.feature_adapt_conv_0 = nn.Conv2d(config.neck_hidden_sizes[0], config.fusion_hidden_size, kernel_size=3, padding=1, bias=False)
         self.feature_adapt_conv_1 = nn.Conv2d(config.neck_hidden_sizes[1], config.fusion_hidden_size, kernel_size=3, padding=1, bias=False)
         self.feature_adapt_conv_2 = nn.Conv2d(config.neck_hidden_sizes[2], config.fusion_hidden_size, kernel_size=3, padding=1, bias=False)
         self.feature_adapt_conv_3 = nn.Conv2d(config.neck_hidden_sizes[3], config.fusion_hidden_size, kernel_size=3, padding=1, bias=False)
 
-        # # Neck
-        # self.neck = DPTNeck(config)
-        # self.neck.reassemble_stage = None
+        
+        
+        
 
-        # Depth estimation head
+        
         self.head = DPTDepthEstimationHead(config)
 
-        # Initialize weights and apply final processing
+        
         self.post_init()
 
     @add_start_docstrings_to_model_forward(DPT_INPUTS_DOCSTRING)
@@ -741,14 +741,14 @@ class DPTNeckHeadForUnetAfterUpsampleWithVaeDecoderWithoutNeck(DPTPreTrainedMode
         >>> image_processor = AutoImageProcessor.from_pretrained("Intel/dpt-large")
         >>> model = DPTForDepthEstimation.from_pretrained("Intel/dpt-large")
 
-        >>> # prepare image for the model
+        >>> 
         >>> inputs = image_processor(images=image, return_tensors="pt")
 
         >>> with torch.no_grad():
         ...     outputs = model(**inputs)
         ...     predicted_depth = outputs.predicted_depth
 
-        >>> # interpolate to original size
+        >>> 
         >>> prediction = torch.nn.functional.interpolate(
         ...     predicted_depth.unsqueeze(1),
         ...     size=image.size[::-1],
@@ -756,7 +756,7 @@ class DPTNeckHeadForUnetAfterUpsampleWithVaeDecoderWithoutNeck(DPTPreTrainedMode
         ...     align_corners=False,
         ... )
 
-        >>> # visualize the prediction
+        >>> 
         >>> output = prediction.squeeze().cpu().numpy()
         >>> formatted = (output * 255 / np.max(output)).astype("uint8")
         >>> depth = Image.fromarray(formatted)
@@ -767,54 +767,54 @@ class DPTNeckHeadForUnetAfterUpsampleWithVaeDecoderWithoutNeck(DPTPreTrainedMode
         )
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
 
-        # if self.backbone is not None:
-        #     outputs = self.backbone.forward_with_filtered_kwargs(
-        #         pixel_values, output_hidden_states=output_hidden_states, output_attentions=output_attentions
-        #     )
-        #     hidden_states = outputs.feature_maps
-        # else:
-        #     outputs = self.dpt(
-        #         pixel_values,
-        #         head_mask=head_mask,
-        #         output_attentions=output_attentions,
-        #         output_hidden_states=True,  # we need the intermediate hidden states
-        #         return_dict=return_dict,
-        #     )
-        #     hidden_states = outputs.hidden_states if return_dict else outputs[1]
-        #     # only keep certain features based on config.backbone_out_indices
-        #     # note that the hidden_states also include the initial embeddings
-        #     if not self.config.is_hybrid:
-        #         hidden_states = [
-        #             feature for idx, feature in enumerate(hidden_states[1:]) if idx in self.config.backbone_out_indices
-        #         ]
-        #     else:
-        #         backbone_hidden_states = outputs.intermediate_activations if return_dict else list(outputs[-1])
-        #         backbone_hidden_states.extend(
-        #             feature
-        #             for idx, feature in enumerate(hidden_states[1:])
-        #             if idx in self.config.backbone_out_indices[2:]
-        #         )
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-        #         hidden_states = backbone_hidden_states
+        
 
 
         assert len(hidden_states) == 4
 
-        # upsample hidden_states for unet
+        
         hidden_states = [getattr(self, "feature_adapt_conv_%s" %i)(hidden_states[i]) for i in range(len(hidden_states))]
-        # hidden_states[0] = getattr(self, "feature_upsample_0")(hidden_states[0])
+        
 
-        # patch_height, patch_width = None, None
-        # if self.config.backbone_config is not None and self.config.is_hybrid is False:
-        #     _, _, height, width = hidden_states[3].shape
-        #     height *= 8; width *= 8
-        #     patch_size = self.config.backbone_config.patch_size
-        #     patch_height = height 
-        #     patch_width = width 
+        
+        
+        
+        
+        
+        
+        
 
-        # # import pdb
-        # # pdb.set_trace()
-        # hidden_states = self.neck(hidden_states, patch_height, patch_width)
+        
+        
+        
 
         predicted_depth = self.head(hidden_states)
 

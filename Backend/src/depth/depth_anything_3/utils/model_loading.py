@@ -1,16 +1,16 @@
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 """
 Model loading and state dict conversion utilities.
@@ -32,20 +32,20 @@ def convert_general_state_dict(state_dict: Dict[str, torch.Tensor]) -> Dict[str,
     Returns:
         Converted state dictionary
     """
-    # Replace module prefixes
+    
     state_dict = {k.replace("module.", "model."): v for k, v in state_dict.items()}
     state_dict = {k.replace(".net.", ".backbone."): v for k, v in state_dict.items()}
 
-    # Remove camera token if present
+    
     if "model.backbone.pretrained.camera_token" in state_dict:
         del state_dict["model.backbone.pretrained.camera_token"]
 
-    # Replace camera token naming
+    
     state_dict = {
         k.replace(".camera_token_extra", ".camera_token"): v for k, v in state_dict.items()
     }
 
-    # Replace head naming
+    
     state_dict = {
         k.replace("model.all_heads.camera_cond_head", "model.cam_enc"): v
         for k, v in state_dict.items()
@@ -59,14 +59,14 @@ def convert_general_state_dict(state_dict: Dict[str, torch.Tensor]) -> Dict[str,
         k.replace("model.all_heads.head", "model.head"): v for k, v in state_dict.items()
     }
 
-    # Replace output naming
+    
     state_dict = {
         k.replace("output_conv2_additional.sky_mask", "sky_output_conv2"): v
         for k, v in state_dict.items()
     }
     state_dict = {k.replace("_ray.", "_aux."): v for k, v in state_dict.items()}
 
-    # Update GS-DPT head naming and value
+    
     state_dict = {k.replace("gaussian_param_head.", "gs_head."): v for k, v in state_dict.items()}
 
     return state_dict
@@ -82,7 +82,7 @@ def convert_metric_state_dict(state_dict: Dict[str, torch.Tensor]) -> Dict[str, 
     Returns:
         Converted state dictionary
     """
-    # Add module prefix for metric models
+    
     state_dict = {"module." + k: v for k, v in state_dict.items()}
     return convert_general_state_dict(state_dict)
 
@@ -130,17 +130,17 @@ def load_pretrained_nested_weights(
     Returns:
         Tuple of (missed_keys, unexpected_keys)
     """
-    # Load main model weights
+    
     state_dict0 = torch.load(main_model_path, map_location="cpu")
     state_dict0 = convert_general_state_dict(state_dict0)
     state_dict0 = {k.replace("model.", "model.da3."): v for k, v in state_dict0.items()}
 
-    # Load metric model weights
+    
     state_dict1 = torch.load(metric_model_path, map_location="cpu")
     state_dict1 = convert_metric_state_dict(state_dict1)
     state_dict1 = {k.replace("model.", "model.da3_metric."): v for k, v in state_dict1.items()}
 
-    # Combine state dictionaries
+    
     combined_state_dict = state_dict0.copy()
     combined_state_dict.update(state_dict1)
     del state_dict0

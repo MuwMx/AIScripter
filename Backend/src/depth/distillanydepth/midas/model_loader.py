@@ -130,10 +130,10 @@ def load_model(device, model_path, model_type="dpt_large_384", optimize=True, he
         resize_mode = "minimal"
         normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
-    # We change the notation from dpt_levit_224 (MiDaS notation) to levit_384 (timm notation) here, where the 224 refers
-    # to the resolution 224x224 used by LeViT and 384 is the first entry of the embed_dim, see _cfg and model_cfgs of
-    # https://github.com/rwightman/pytorch-image-models/blob/main/timm/models/levit.py
-    # (commit id: 927f031293a30afb940fff0bee34b85d9c059b0e)
+    
+    
+    
+    
     elif model_type == "dpt_levit_224":
         model = DPTDepthModel(
             path=model_path,

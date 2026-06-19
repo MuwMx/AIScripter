@@ -34,7 +34,7 @@ def forward_flex(self, x):
     b, c, h, w = x.shape
 
     pos_embed = self._resize_pos_embed(
-        self.pos_embed, h 
+        self.pos_embed, h // self.patch_size[1], w // self.patch_size[0]
     )
 
     B = x.shape[0]
@@ -42,14 +42,14 @@ def forward_flex(self, x):
     if hasattr(self.patch_embed, "backbone"):
         x = self.patch_embed.backbone(x)
         if isinstance(x, (list, tuple)):
-            x = x[-1]  # last feature if backbone outputs list/tuple of features
+            x = x[-1]  
 
     x = self.patch_embed.proj(x).flatten(2).transpose(1, 2)
 
     if getattr(self, "dist_token", None) is not None:
         cls_tokens = self.cls_token.expand(
             B, -1, -1
-        )  # stole cls_tokens impl from Phil Wang, thanks
+        )  
         dist_token = self.dist_token.expand(B, -1, -1)
         x = torch.cat((cls_tokens, dist_token, x), dim=1)
     else:
@@ -57,7 +57,7 @@ def forward_flex(self, x):
             x = x + pos_embed
         cls_tokens = self.cls_token.expand(
             B, -1, -1
-        )  # stole cls_tokens impl from Phil Wang, thanks
+        )  
         x = torch.cat((cls_tokens, x), dim=1)
 
     if not self.no_embed_class:
@@ -85,8 +85,8 @@ def _make_vit_b16_backbone(
     pretrained = make_backbone_default(model, features, size, hooks, vit_features, use_readout, start_index,
                                        start_index_readout)
 
-    # We inject this function into the VisionTransformer instances so that
-    # we can use it with interpolated position embeddings without modifying the library source.
+    
+    
     pretrained.model.forward_flex = types.MethodType(forward_flex, pretrained.model)
     pretrained.model._resize_pos_embed = types.MethodType(
         _resize_pos_embed, pretrained.model
@@ -153,8 +153,8 @@ def _make_vit_b_rn50_backbone(
             final_layer = nn.ConvTranspose2d(
                 in_channels=features[s],
                 out_channels=features[s],
-                kernel_size=4 
-                stride=4 
+                kernel_size=4 // (2 ** s),
+                stride=4 // (2 ** s),
                 padding=0,
                 bias=True,
                 dilation=1,
@@ -174,7 +174,7 @@ def _make_vit_b_rn50_backbone(
         layers = [
             readout_oper[s],
             Transpose(1, 2),
-            nn.Unflatten(2, torch.Size([size[0] 
+            nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
             nn.Conv2d(
                 in_channels=vit_features,
                 out_channels=features[s],
@@ -192,12 +192,12 @@ def _make_vit_b_rn50_backbone(
     pretrained.model.start_index = start_index
     pretrained.model.patch_size = patch_size
 
-    # We inject this function into the VisionTransformer instances so that
-    # we can use it with interpolated position embeddings without modifying the library source.
+    
+    
     pretrained.model.forward_flex = types.MethodType(forward_flex, pretrained.model)
 
-    # We inject this function into the VisionTransformer instances so that
-    # we can use it with interpolated position embeddings without modifying the library source.
+    
+    
     pretrained.model._resize_pos_embed = types.MethodType(
         _resize_pos_embed, pretrained.model
     )

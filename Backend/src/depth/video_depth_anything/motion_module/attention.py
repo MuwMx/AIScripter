@@ -1,16 +1,16 @@
-# Copyright 2022 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
+
+
+
+
+
+
+
+
+
+
+
+
 from typing import Optional, Tuple
 
 import torch
@@ -64,9 +64,9 @@ class CrossAttention(nn.Module):
         self.scale = dim_head**-0.5
 
         self.heads = heads
-        # for slice_size > 0 the attention score computation
-        # is split across the batch axis to save memory
-        # You can set slice_size with `set_attention_slice`
+        
+        
+        
         self.sliceable_head_dim = heads
         self._slice_size = None
         self._use_memory_efficient_attention_xformers = False
@@ -92,21 +92,21 @@ class CrossAttention(nn.Module):
     def reshape_heads_to_batch_dim(self, tensor):
         batch_size, seq_len, dim = tensor.shape
         head_size = self.heads
-        tensor = tensor.reshape(batch_size, seq_len, head_size, dim 
-        tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size * head_size, seq_len, dim 
+        tensor = tensor.reshape(batch_size, seq_len, head_size, dim // head_size).contiguous()
+        tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size * head_size, seq_len, dim // head_size).contiguous()
         return tensor
 
     def reshape_heads_to_4d(self, tensor):
         batch_size, seq_len, dim = tensor.shape
         head_size = self.heads
-        tensor = tensor.reshape(batch_size, seq_len, head_size, dim 
+        tensor = tensor.reshape(batch_size, seq_len, head_size, dim // head_size).contiguous()
         return tensor
 
     def reshape_batch_dim_to_heads(self, tensor):
         batch_size, seq_len, dim = tensor.shape
         head_size = self.heads
-        tensor = tensor.reshape(batch_size 
-        tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size 
+        tensor = tensor.reshape(batch_size // head_size, head_size, seq_len, dim).contiguous()
+        tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size // head_size, seq_len, dim * head_size).contiguous()
         return tensor
 
     def reshape_4d_to_heads(self, tensor):
@@ -160,21 +160,21 @@ class CrossAttention(nn.Module):
                 attention_mask = F.pad(attention_mask, (0, target_length), value=0.0)
                 attention_mask = attention_mask.repeat_interleave(self.heads, dim=0)
 
-        # attention, what we cannot get enough of
+        
         if XFORMERS_AVAILABLE and self._use_memory_efficient_attention_xformers:
             hidden_states = self._memory_efficient_attention_xformers(query, key, value, attention_mask)
-            # Some versions of xformers return output in fp32, cast it back to the dtype of the input
+            
             hidden_states = hidden_states.to(query.dtype)
         else:
-            if self._slice_size is None or query.shape[0] 
+            if self._slice_size is None or query.shape[0] // self._slice_size == 1:
                 hidden_states = self._attention(query, key, value, attention_mask)
             else:
                 hidden_states = self._sliced_attention(query, key, value, sequence_length, dim, attention_mask)
 
-        # linear proj
+        
         hidden_states = self.to_out[0](hidden_states)
 
-        # dropout
+        
         hidden_states = self.to_out[1](hidden_states)
         return hidden_states
 
@@ -199,23 +199,23 @@ class CrossAttention(nn.Module):
 
         attention_probs = attention_scores.softmax(dim=-1)
 
-        # cast back to the original dtype
+        
         attention_probs = attention_probs.to(value.dtype)
 
-        # compute attention output
+        
         hidden_states = torch.bmm(attention_probs, value)
 
-        # reshape hidden_states
+        
         hidden_states = self.reshape_batch_dim_to_heads(hidden_states)
         return hidden_states
 
     def _sliced_attention(self, query, key, value, sequence_length, dim, attention_mask):
         batch_size_attention = query.shape[0]
         hidden_states = torch.zeros(
-            (batch_size_attention, sequence_length, dim 
+            (batch_size_attention, sequence_length, dim // self.heads), device=query.device, dtype=query.dtype
         )
         slice_size = self._slice_size if self._slice_size is not None else hidden_states.shape[0]
-        for i in range(hidden_states.shape[0] 
+        for i in range(hidden_states.shape[0] // slice_size):
             start_idx = i * slice_size
             end_idx = (i + 1) * slice_size
 
@@ -242,13 +242,13 @@ class CrossAttention(nn.Module):
 
             attn_slice = attn_slice.softmax(dim=-1)
 
-            # cast back to the original dtype
+            
             attn_slice = attn_slice.to(value.dtype)
             attn_slice = torch.bmm(attn_slice, value[start_idx:end_idx])
 
             hidden_states[start_idx:end_idx] = attn_slice
 
-        # reshape hidden_states
+        
         hidden_states = self.reshape_batch_dim_to_heads(hidden_states)
         return hidden_states
 
@@ -268,13 +268,13 @@ class CrossAttention(nn.Module):
         hidden_states = self.reshape_4d_to_heads(hidden_states)
         return hidden_states
 
-        # print("Errror: no xformers")
-        # raise NotImplementedError
+        
+        
 
     def _memory_efficient_attention_split(self, query, key, value, attention_mask):
         batch_size = query.shape[0]
         max_batch_size = 65535
-        num_batches = (batch_size + max_batch_size - 1) 
+        num_batches = (batch_size + max_batch_size - 1) // max_batch_size
         results = []
         for i in range(num_batches):
             start_idx = i * max_batch_size
@@ -324,11 +324,11 @@ class FeedForward(nn.Module):
             act_fn = ApproximateGELU(dim, inner_dim)
 
         self.net = nn.ModuleList([])
-        # project in
+        
         self.net.append(act_fn)
-        # project dropout
+        
         self.net.append(nn.Dropout(dropout))
-        # project out
+        
         self.net.append(nn.Linear(inner_dim, dim_out))
 
     def forward(self, hidden_states):
@@ -349,7 +349,7 @@ class GELU(nn.Module):
     def gelu(self, gate):
         if gate.device.type != "mps":
             return F.gelu(gate)
-        # mps: gelu is not implemented for float16
+        
         return F.gelu(gate.to(dtype=torch.float32)).to(dtype=gate.dtype)
 
     def forward(self, hidden_states):
@@ -358,7 +358,7 @@ class GELU(nn.Module):
         return hidden_states
 
 
-# feedforward
+
 class GEGLU(nn.Module):
     r"""
     A variant of the gated linear unit activation function from https://arxiv.org/abs/2002.05202.
@@ -375,7 +375,7 @@ class GEGLU(nn.Module):
     def gelu(self, gate):
         if gate.device.type != "mps":
             return F.gelu(gate)
-        # mps: gelu is not implemented for float16
+        
         return F.gelu(gate.to(dtype=torch.float32)).to(dtype=gate.dtype)
 
     def forward(self, hidden_states):
@@ -400,10 +400,10 @@ class ApproximateGELU(nn.Module):
 
 
 def precompute_freqs_cis(dim: int, end: int, theta: float = 10000.0):
-    freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[: (dim 
+    freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[: (dim // 2)].float() / dim))
     t = torch.arange(end, device=freqs.device, dtype=torch.float32)
     freqs = torch.outer(t, freqs)
-    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)  # complex64
+    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)  
     return freqs_cis
 
 

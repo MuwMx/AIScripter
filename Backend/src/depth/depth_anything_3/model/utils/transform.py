@@ -1,16 +1,16 @@
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import torch
 import torch.nn.functional as F
@@ -23,13 +23,13 @@ def extri_intri_to_pose_encoding(
 ):
     """Convert camera extrinsics and intrinsics to a compact pose encoding."""
 
-    # extrinsics: BxSx3x4
-    # intrinsics: BxSx3x3
-    R = extrinsics[:, :, :3, :3]  # BxSx3x3
-    T = extrinsics[:, :, :3, 3]  # BxSx3
+    
+    
+    R = extrinsics[:, :, :3, :3]  
+    T = extrinsics[:, :, :3, 3]  
 
     quat = mat_to_quat(R)
-    # Note the order of h and w here
+    
     H, W = image_size_hw
     fov_h = 2 * torch.atan((H / 2) / intrinsics[..., 1, 1])
     fov_w = 2 * torch.atan((W / 2) / intrinsics[..., 0, 0])
@@ -60,7 +60,7 @@ def pose_encoding_to_extri_intri(
     intrinsics[..., 1, 1] = fy
     intrinsics[..., 0, 2] = W / 2
     intrinsics[..., 1, 2] = H / 2
-    intrinsics[..., 2, 2] = 1.0  # Set the homogeneous coordinate to 1
+    intrinsics[..., 2, 2] = 1.0  
 
     return extrinsics, intrinsics
 
@@ -182,26 +182,26 @@ def standardize_quaternion(quaternions: torch.Tensor) -> torch.Tensor:
 
 
 def cam_quat_xyzw_to_world_quat_wxyz(cam_quat_xyzw, c2w):
-    # cam_quat_xyzw: (b, n, 4) in xyzw
-    # c2w: (b, n, 4, 4)
+    
+    
     b, n = cam_quat_xyzw.shape[:2]
-    # 1. xyzw -> wxyz
+    
     cam_quat_wxyz = torch.cat(
         [
-            cam_quat_xyzw[..., 3:4],  # w
-            cam_quat_xyzw[..., 0:1],  # x
-            cam_quat_xyzw[..., 1:2],  # y
-            cam_quat_xyzw[..., 2:3],  # z
+            cam_quat_xyzw[..., 3:4],  
+            cam_quat_xyzw[..., 0:1],  
+            cam_quat_xyzw[..., 1:2],  
+            cam_quat_xyzw[..., 2:3],  
         ],
         dim=-1,
     )
-    # 2. Quaternion to matrix
+    
     cam_quat_wxyz_flat = cam_quat_wxyz.reshape(-1, 4)
     rotmat_cam = quat_to_mat(cam_quat_wxyz_flat).reshape(b, n, 3, 3)
-    # 3. Transform to world space
+    
     rotmat_c2w = c2w[..., :3, :3]
     rotmat_world = torch.matmul(rotmat_c2w, rotmat_cam)
-    # 4. Matrix to quaternion (wxyz)
+    
     rotmat_world_flat = rotmat_world.reshape(-1, 3, 3)
     world_quat_wxyz_flat = mat_to_quat(rotmat_world_flat)
     world_quat_wxyz = world_quat_wxyz_flat.reshape(b, n, 4)

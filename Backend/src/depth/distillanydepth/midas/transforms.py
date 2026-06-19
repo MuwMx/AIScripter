@@ -27,7 +27,7 @@ def apply_min_size(sample, size, image_interpolation_method=cv2.INTER_AREA):
     shape[0] = math.ceil(scale * shape[0])
     shape[1] = math.ceil(scale * shape[1])
 
-    # resize
+    
     sample["image"] = cv2.resize(
         sample["image"], tuple(shape[::-1]), interpolation=image_interpolation_method
     )
@@ -103,34 +103,34 @@ class Resize(object):
         return y
 
     def get_size(self, width, height):
-        # determine new height and width
+        
         scale_height = self.__height / height
         scale_width = self.__width / width
 
         if self.__keep_aspect_ratio:
             if self.__resize_method == "lower_bound":
-                # scale such that output size is lower bound
+                
                 if scale_width > scale_height:
-                    # fit width
+                    
                     scale_height = scale_width
                 else:
-                    # fit height
+                    
                     scale_width = scale_height
             elif self.__resize_method == "upper_bound":
-                # scale such that output size is upper bound
+                
                 if scale_width < scale_height:
-                    # fit width
+                    
                     scale_height = scale_width
                 else:
-                    # fit height
+                    
                     scale_width = scale_height
             elif self.__resize_method == "minimal":
-                # scale as least as possbile
+                
                 if abs(1 - scale_width) < abs(1 - scale_height):
-                    # fit width
+                    
                     scale_height = scale_width
                 else:
-                    # fit height
+                    
                     scale_width = scale_height
             else:
                 raise ValueError(
@@ -164,7 +164,7 @@ class Resize(object):
             sample["image"].shape[1], sample["image"].shape[0]
         )
 
-        # resize sample
+        
         sample["image"] = cv2.resize(
             sample["image"],
             (width, height),
@@ -184,12 +184,12 @@ class Resize(object):
                     sample["depth"], (width, height), interpolation=cv2.INTER_NEAREST
                 )
 
-            # sample["mask"] = cv2.resize(
-            #     sample["mask"].astype(np.float32),
-            #     (width, height),
-            #     interpolation=cv2.INTER_NEAREST,
-            # )
-            # sample["mask"] = sample["mask"].astype(bool)
+            
+            
+            
+            
+            
+            
 
         return sample
 

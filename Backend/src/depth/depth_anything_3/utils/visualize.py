@@ -1,16 +1,16 @@
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import matplotlib
 import numpy as np
@@ -65,7 +65,7 @@ def visualize_depth(
     cm = matplotlib.colormaps[cmap]
     depth = ((depth - depth_min) / (depth_max - depth_min)).clip(0, 1)
     depth = 1 - depth
-    img_colored_np = cm(depth[None], bytes=False)[:, :, :, 0:3]  # value from 0 to 1
+    img_colored_np = cm(depth[None], bytes=False)[:, :, :, 0:3]  
     if ret_type == np.uint8:
         img_colored_np = (img_colored_np[0] * 255.0).astype(np.uint8)
     elif ret_type == np.float32 or ret_type == np.float64:
@@ -78,13 +78,13 @@ def visualize_depth(
         return img_colored_np
 
 
-# GS video rendering visulization function, since it operates in Tensor space...
+
 
 
 def vis_depth_map_tensor(
-    result: torch.Tensor,  # "*batch height width"
+    result: torch.Tensor,  
     color_map: str = "Spectral",
-) -> torch.Tensor:  # "*batch 3 height with"
+) -> torch.Tensor:  
     """
     Color-map the depth map.
     """
@@ -100,21 +100,21 @@ def vis_depth_map_tensor(
 
 
 def apply_color_map(
-    x: torch.Tensor,  # " *batch"
+    x: torch.Tensor,  
     color_map: str = "inferno",
-) -> torch.Tensor:  # "*batch 3"
+) -> torch.Tensor:  
     cmap = matplotlib.cm.get_cmap(color_map)
 
-    # Convert to NumPy so that Matplotlib color maps can be used.
+    
     mapped = cmap(x.float().detach().clip(min=0, max=1).cpu().numpy())[..., :3]
 
-    # Convert back to the original format.
+    
     return torch.tensor(mapped, device=x.device, dtype=torch.float32)
 
 
 def apply_color_map_to_image(
-    image: torch.Tensor,  # "*batch height width"
+    image: torch.Tensor,  
     color_map: str = "inferno",
-) -> torch.Tensor:  # "*batch 3 height with"
+) -> torch.Tensor:  
     image = apply_color_map(image, color_map)
     return rearrange(image, "... h w c -> ... c h w")

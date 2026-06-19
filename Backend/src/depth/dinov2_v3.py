@@ -1,11 +1,11 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-#
-# This source code is licensed under the Apache License, Version 2.0
-# found in the LICENSE file in the root directory of this source tree.
 
-# References:
-#   https://github.com/facebookresearch/dino/blob/main/vision_transformer.py
-#   https://github.com/rwightman/pytorch-image-models/tree/master/timm/models/vision_transformer.py
+
+
+
+
+
+
+
 
 from functools import partial
 import math
@@ -60,7 +60,7 @@ class AttentionNorm(nn.Module):
     ):
         super().__init__()
         self.num_heads = num_heads
-        head_dim = dim 
+        head_dim = dim // num_heads
         self.scale = head_dim**-0.5
         self.qknorm = qknorm
 
@@ -77,7 +77,7 @@ class AttentionNorm(nn.Module):
         B, N, C = x.shape
         qkv = (
             self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, C 
+            .reshape(B, N, 3, self.num_heads, C // self.num_heads)
             .permute(2, 0, 3, 1, 4)
         )
         q, k, v = qkv[0], qkv[1], qkv[2]
@@ -102,34 +102,34 @@ class MemEffAttentionNorm(MemEffAttention):
         self.qknorm = qknorm
         if qknorm:
             head_dim = self.num_heads
-            # MemEffAttention usually stores head_dim implicitly or calculates it
-            # But standard DINOv2 MemEff doesn't expose it in __init__ easily?
-            # Actually, standard DINOv2 MemEff init: dim, num_heads, qkv_bias, etc.
-            # We need to know head_dim.
-            # In dinov2_layers.py usually head_dim = dim 
+            
+            
+            
+            
+            
 
-            # Let's check how to get dim from args if it's passed directly
-            # args[0] is typically dim
+            
+            
             dim = kwargs.get("dim", args[0] if args else None)
             num_heads = kwargs.get(
                 "num_heads", args[1] if len(args) > 1 else self.num_heads
             )
-            head_dim = dim 
+            head_dim = dim // num_heads
 
             self.q_norm = nn.LayerNorm(head_dim)
             self.k_norm = nn.LayerNorm(head_dim)
 
     def forward(self, x, bias=None):
-        # We need to override forward to apply norm
-        # This is tricky because we inherit from MemEffAttention which relies on xformers or sdp
-        # and has its own forward logic.
-        # Ideally we should copy the forward logic and insert norm.
+        
+        
+        
+        
 
-        # Standard MemEffAttention forward:
+        
         B, N, C = x.shape
         qkv = (
             self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, C 
+            .reshape(B, N, 3, self.num_heads, C // self.num_heads)
             .permute(2, 0, 3, 1, 4)
         )
         q, k, v = qkv[0], qkv[1], qkv[2]
@@ -138,9 +138,9 @@ class MemEffAttentionNorm(MemEffAttention):
             q = self.q_norm(q)
             k = self.k_norm(k)
 
-        # Now call the attention implementation
-        # Standard DINOv2 uses F.scaled_dot_product_attention (if PyTorch 2.0) or xformers
-        # Since we modified q, k, we can't just call super().forward()
+        
+        
+        
 
         return (
             torch.nn.functional.scaled_dot_product_attention(
@@ -149,9 +149,9 @@ class MemEffAttentionNorm(MemEffAttention):
             .transpose(1, 2)
             .reshape(B, N, C)
         )
-        # Note: missing projection!
+        
 
-        # Real forward needs projection at end
+        
         x = torch.nn.functional.scaled_dot_product_attention(
             q, k, v, attn_mask=bias, dropout_p=0.0, is_causal=False
         )
@@ -192,7 +192,7 @@ class DinoVisionTransformerV3(nn.Module):
         num_register_tokens=0,
         interpolate_antialias=False,
         interpolate_offset=0.1,
-        qknorm_start=-1,  # New param for V3
+        qknorm_start=-1,  
     ):
         super().__init__()
         norm_layer = partial(nn.LayerNorm, eps=1e-6)
@@ -244,29 +244,29 @@ class DinoVisionTransformerV3(nn.Module):
 
         blocks_list = []
         for i in range(depth):
-            # Check if this block should have QKNorm
+            
             use_qknorm = (qknorm_start >= 0) and (i >= qknorm_start)
 
-            # Create block with qknorm arg
-            # Note: block_fn is usually partial(Block, attn_class=MemEffAttention)
-            # We need to inject qknorm into attn_class
+            
+            
+            
 
-            # Best way is to use a custom attention class if qknorm is needed
+            
             if use_qknorm:
-                # Assuming block_fn is NestTensorBlock which takes attn_class
-                # We need to pass attn_class that has qknorm=True
-                # Or pass qknorm to the block and let block pass it to attn?
-                # Does Block accept kwargs that go to attn? Usually yes.
+                
+                
+                
+                
 
-                # Let's inspect Block (NestedTensorBlock) in dinov2_layers.py
-                # It accepts **kwargs and passes them to attn_class?
-                # Actually standard timm block passes: dim, num_heads, qkv_bias, attn_drop, proj_drop
-                # We need to pass qknorm.
+                
+                
+                
+                
 
-                # We'll use a wrapper or partial for attn_class
+                
                 attn_cls = partial(MemEffAttentionNorm, qknorm=True)
             else:
-                attn_cls = MemEffAttention  # Standard without norm
+                attn_cls = MemEffAttention  
 
             blocks_list.append(
                 block_fn(
@@ -281,13 +281,13 @@ class DinoVisionTransformerV3(nn.Module):
                     act_layer=act_layer,
                     ffn_layer=ffn_layer,
                     init_values=init_values,
-                    attn_class=attn_cls,  # Pass our custom attn class
+                    attn_class=attn_cls,  
                 )
             )
 
         self.blocks = nn.ModuleList(blocks_list)
         self.chunked_blocks = (
-            False  # Simplifying by removing chunked blocks logic for now
+            False  
         )
 
         self.norm = norm_layer(embed_dim)
@@ -314,8 +314,8 @@ class DinoVisionTransformerV3(nn.Module):
         class_pos_embed = pos_embed[:, 0]
         patch_pos_embed = pos_embed[:, 1:]
         dim = x.shape[-1]
-        w0 = w 
-        h0 = h 
+        w0 = w // self.patch_size
+        h0 = h // self.patch_size
         w0, h0 = w0 + self.interpolate_offset, h0 + self.interpolate_offset
 
         sqrt_N = math.sqrt(N)
@@ -400,7 +400,7 @@ class DinoVisionTransformerV3(nn.Module):
         if reshape:
             B, _, w, h = x.shape
             outputs = [
-                out.reshape(B, w 
+                out.reshape(B, w // self.patch_size, h // self.patch_size, -1)
                 .permute(0, 3, 1, 2)
                 .contiguous()
                 for out in outputs
@@ -426,7 +426,7 @@ def vit_small(patch_size=16, num_register_tokens=0, **kwargs):
         mlp_ratio=4,
         block_fn=partial(
             Block, attn_class=MemEffAttention
-        ),  # Default, replaced in init if qknorm used
+        ),  
         num_register_tokens=num_register_tokens,
         **kwargs,
     )
@@ -492,5 +492,5 @@ def DINOv2_V3(model_name, qknorm_start=-1):
         num_register_tokens=0,
         interpolate_antialias=False,
         interpolate_offset=0.1,
-        qknorm_start=qknorm_start,  # Pass the qknorm start index
+        qknorm_start=qknorm_start,  
     )

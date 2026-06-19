@@ -16,7 +16,7 @@ class CudaChecker:
         not validate CUDA GPU architecture compatibility. Use
         detectGPUArchitecture() to check for Pascal or older GPUs.
         """
-        # Lazify the import
+        
         import torch
 
         global LOGGEDALREADY

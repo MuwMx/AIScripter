@@ -43,18 +43,18 @@ class DPT(BaseModel):
 
         self.channels_last = channels_last
 
-        # For the Swin, Swin 2, LeViT and Next-ViT Transformers, the hierarchical architectures prevent setting the 
-        # hooks freely. Instead, the hooks have to be chosen according to the ranges specified in the comments.
+        
+        
         hooks = {
             "beitl16_512": [5, 11, 17, 23],
             "beitl16_384": [5, 11, 17, 23],
             "beitb16_384": [2, 5, 8, 11],
-            "swin2l24_384": [1, 1, 17, 1],  # Allowed ranges: [0, 1], [0,  1], [ 0, 17], [ 0,  1]
-            "swin2b24_384": [1, 1, 17, 1],                  # [0, 1], [0,  1], [ 0, 17], [ 0,  1]
-            "swin2t16_256": [1, 1, 5, 1],                   # [0, 1], [0,  1], [ 0,  5], [ 0,  1]
-            "swinl12_384": [1, 1, 17, 1],                   # [0, 1], [0,  1], [ 0, 17], [ 0,  1]
-            "next_vit_large_6m": [2, 6, 36, 39],            # [0, 2], [3,  6], [ 7, 36], [37, 39]
-            "levit_384": [3, 11, 21],                       # [0, 3], [6, 11], [14, 21]
+            "swin2l24_384": [1, 1, 17, 1],  
+            "swin2b24_384": [1, 1, 17, 1],                  
+            "swin2t16_256": [1, 1, 5, 1],                   
+            "swinl12_384": [1, 1, 17, 1],                   
+            "next_vit_large_6m": [2, 6, 36, 39],            
+            "levit_384": [3, 11, 21],                       
             "vitb_rn50_384": [0, 1, 8, 11],
             "vitb16_384": [2, 5, 8, 11],
             "vitl16_384": [5, 11, 17, 23],
@@ -67,11 +67,11 @@ class DPT(BaseModel):
         else:
             in_features = None
 
-        # Instantiate backbone and reassemble blocks
+        
         self.pretrained, self.scratch = _make_encoder(
             backbone,
             features,
-            False, # Set to true of you want to train from scratch, uses ImageNet weights
+            False, 
             groups=1,
             expand=False,
             exportable=False,
@@ -148,9 +148,9 @@ class DPTDepthModel(DPT):
         kwargs.pop("head_features_2", None)
 
         head = nn.Sequential(
-            nn.Conv2d(head_features_1, head_features_1 
+            nn.Conv2d(head_features_1, head_features_1 // 2, kernel_size=3, stride=1, padding=1),
             Interpolate(scale_factor=2, mode="bilinear", align_corners=True),
-            nn.Conv2d(head_features_1 
+            nn.Conv2d(head_features_1 // 2, head_features_2, kernel_size=3, stride=1, padding=1),
             nn.ReLU(True),
             nn.Conv2d(head_features_2, 1, kernel_size=1, stride=1, padding=0),
             nn.ReLU(True) if non_negative else nn.Identity(),

@@ -5,21 +5,21 @@ import subprocess
 import glob
 from pathlib import Path
 
-# Путь к локальной папке интерфейса (где сейчас лежит этот скрипт)
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOCAL_ROOT = os.path.dirname(os.path.dirname(CURRENT_DIR))  # C:\mods\ScripterResolve
 
-# Жесткий путь к основному ядру в Roaming (где лежат модели и портативный питон)
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+LOCAL_ROOT = os.path.dirname(os.path.dirname(CURRENT_DIR))  
+
+
 ROAMING_ROOT = os.path.join(os.environ['APPDATA'], "MyScripterAE")
 
-# Перенаправляем поиск исполняемых файлов в Roaming
+
 FFMPEG_EXE = os.path.join(ROAMING_ROOT, "ffmpeg_shared", "ffmpeg.exe")
 PYTHON_EXE = os.path.join(ROAMING_ROOT, "python.exe")
 BACKEND_MAIN = os.path.join(ROAMING_ROOT, "backend", "main.py")
 
 class VFXOrchestrator:
     def __init__(self, repo):
-        self.repo = repo  # Экземпляр ResolveRepository
+        self.repo = repo  
 
     def run_pipeline(self, task_type, mode, ui_settings, log_callback):
         """
@@ -28,15 +28,15 @@ class VFXOrchestrator:
         try:
             log_callback(f"[ORCHESTRATOR] Starting pipeline. Active modules: {', '.join(task_type).upper()}")
 
-            # 1. Сбор метаданных клипа под плейхедом
+            
             clip_data = self.repo.get_clip_metadata()
             
-            # 2. Динамический запрос имени текущего проекта из DaVinci Resolve
+            
             project_name = self.repo.project.GetName()
             if project_name == "Untitled Project":
                 raise RuntimeError("Save your project in DaVinci (Ctrl+S) before running the pipeline!")
 
-            # 3. Сборка изолированной структуры папок через pathlib
+            
             base_work_dir = Path(ui_settings.get("work_dir") or LOCAL_ROOT)
             cache_base_dir = base_work_dir / "RS_Cache" / project_name / "Cache"
             
@@ -50,13 +50,13 @@ class VFXOrchestrator:
             chunk_name = f"chunk_{timestamp}.mp4"
             input_chunk_path = str(input_dir / chunk_name)
 
-            # =================================================================
-            # ШАГ 1: ЭКСПОРТ ЧАНКА
-            # =================================================================
+            
+            
+            
             log_callback("[ORCHESTRATOR] Bake Mode: Creating Render Job in Resolve...")
             project = self.repo.project
             
-           # Настройки рендера (H.264, MP4, 15 Mbps, без звука)
+           
             project.SetRenderSettings({
                 "TargetDir": str(input_dir),
                 "CustomName": chunk_name.replace(".mp4", ""),
@@ -64,8 +64,8 @@ class VFXOrchestrator:
                 "ExportAudio": False,
                 "VideoCodec": "H264",
                 "VideoFormat": "mp4",
-                "VideoQuality": 15000,  # 15 Mbps
-                "RenderMode": 0,        # Одиночный клип
+                "VideoQuality": 15000,  
+                "RenderMode": 0,        
                 "SelectAllFrames": False,
                 "MarkIn": int(clip_data["start_frame"]),
                 "MarkOut": int(clip_data["end_frame"])
@@ -78,7 +78,7 @@ class VFXOrchestrator:
             log_callback(f"[ORCHESTRATOR] Render Job {job_id} added. Starting render...")
             project.StartRendering(job_id)
             
-            # Цикл ожидания окончания рендера чанка
+            
             while True:
                 status = project.GetRenderJobStatus(job_id)
                 state = status.get("JobStatus", "")
@@ -93,7 +93,7 @@ class VFXOrchestrator:
             project.DeleteRenderJob(job_id)
             log_callback("[ORCHESTRATOR] Render Job removed from Deliver queue.")
 
-            # АВТОДЕТЕКТ: Находим реальный запеченный чанк через pathlib
+            
             actual_files = list(input_dir.glob(f"chunk_{timestamp}*"))
             if actual_files:
                 input_chunk_path = str(actual_files[0])
@@ -101,13 +101,13 @@ class VFXOrchestrator:
             else:
                 raise RuntimeError(f"Render finished, but no source file found in {input_dir}")
 
-            # Переменная для отслеживания текущего файла в цепочке
+            
             current_processing_file = input_chunk_path
             final_output_path = None
 
-            # -----------------------------------------------------------------
-            # СТАДИЯ 1: SMART CLEAN (DEDUP)
-            # -----------------------------------------------------------------
+            
+            
+            
             if "clean" in task_type:
                 clean_out = str(output_dir / f"AIScripter_{timestamp}_clean_out.mp4")
                 json_out = str(output_dir / f"frames_{timestamp}.json")
@@ -126,9 +126,9 @@ class VFXOrchestrator:
                 current_processing_file = clean_out
                 final_output_path = clean_out
 
-            # -----------------------------------------------------------------
-            # СТАДИЯ 2: RIFE INTERPOLATION
-            # -----------------------------------------------------------------
+            
+            
+            
             if "rife" in task_type:
                 rife_out = str(output_dir / f"AIScripter_{timestamp}_rife_out.mp4")
                 
@@ -145,9 +145,9 @@ class VFXOrchestrator:
                 
                 final_output_path = rife_out
 
-            # -----------------------------------------------------------------
-            # ИМПОРТ ФИНАЛЬНОГО РЕЗУЛЬТАТА НА ТАЙМЛАЙН
-            # -----------------------------------------------------------------
+            
+            
+            
             if final_output_path and os.path.exists(final_output_path):
                 log_callback("[ORCHESTRATOR] AI Chaining complete. Importing final result to DaVinci...")
                 self.repo.import_and_replace(
@@ -166,19 +166,19 @@ class VFXOrchestrator:
             raise e
         finally:
             log_callback("[ORCHESTRATOR] Starting garbage cleanup...")
-            # Удаляем исходный запеченный чанк из _Input
+            
             if 'input_chunk_path' in locals() and os.path.exists(input_chunk_path):
                 try: os.remove(input_chunk_path)
                 except: pass
             
-            # Удаляем промежуточный файл Clean, если после него работал RIFE
+            
             if "clean" in task_type and "rife" in task_type:
                 clean_temp = str(output_dir / f"AIScripter_{timestamp}_clean_out.mp4")
                 if os.path.exists(clean_temp):
                     try: os.remove(clean_temp)
                     except: pass
 
-            # Наглухо стираем неиспользуемый в DaVinci сервисный .json дедупликатора
+            
             if "clean" in task_type:
                 json_temp = str(output_dir / f"frames_{timestamp}.json")
                 if os.path.exists(json_temp):

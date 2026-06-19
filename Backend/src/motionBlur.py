@@ -431,12 +431,12 @@ class MotionBlurPipeline:
         framesToInsert = factor - 1
         halfWindow = self.shutterAngle / 720.0
 
-        # prev segment: keep samples with k ≥ ceil(factor*(1-halfWindow))
+        
         kStart = max(1, math.ceil(factor * (1.0 - halfWindow)))
         prevSegStart = min(framesToInsert, kStart - 1)
         leftCount = framesToInsert - prevSegStart
 
-        # next segment: keep samples with k ≤ floor(factor*halfWindow)
+        
         nextSegCount = min(framesToInsert, math.floor(factor * halfWindow))
 
         totalSamples = leftCount + 1 + nextSegCount
@@ -481,7 +481,7 @@ class MotionBlurPipeline:
                     break
 
                 if prevFrame is None:
-                    # Prime interp state (firstRun stores I0, returns nothing).
+                    
                     collector.clear()
                     self.interpolateProcess(nextFrame, collector, framesToInsert, None)
                     prevFrame = nextFrame
@@ -494,7 +494,7 @@ class MotionBlurPipeline:
                 newSeg = list(collector.frames)
 
                 if currFrame is None:
-                    # Bootstrap: need both neighboring segments before first blur.
+                    
                     prevSeg = newSeg
                     currFrame = nextFrame
                     continue
@@ -528,7 +528,7 @@ class MotionBlurPipeline:
                 if self.readBuffer.isReadFinished() and self.readBuffer.isQueueEmpty():
                     break
 
-            # Final frame: no nextSeg available, emit pristine.
+            
             if currFrame is not None:
                 self.writeBuffer.write(currFrame)
                 bar(1)

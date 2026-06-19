@@ -1,25 +1,25 @@
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from typing import Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# -----------------------------------------------------------------------------
-# Activation functions
-# -----------------------------------------------------------------------------
+
+
+
 
 
 def activate_head_gs(out, activation="norm_exp", conf_activation="expp1", conf_dim=None):
@@ -36,10 +36,10 @@ def activate_head_gs(out, activation="norm_exp", conf_activation="expp1", conf_d
     Returns:
         Tuple of (3D points tensor, confidence tensor)
     """
-    # Move channels from last dim to the 4th dimension => (B, H, W, C)
-    fmap = out.permute(0, 2, 3, 1)  # B,H,W,C expected
+    
+    fmap = out.permute(0, 2, 3, 1)  
 
-    # Split into xyz (first C-1 channels) and confidence (last channel)
+    
     conf_dim = 1 if conf_dim is None else conf_dim
     xyz = fmap[:, :, :, :-conf_dim]
     conf = fmap[:, :, :, -1] if conf_dim == 1 else fmap[:, :, :, -conf_dim:]
@@ -75,9 +75,9 @@ def activate_head_gs(out, activation="norm_exp", conf_activation="expp1", conf_d
     return pts3d, conf_out
 
 
-# -----------------------------------------------------------------------------
-# Other utilities
-# -----------------------------------------------------------------------------
+
+
+
 
 
 class Permute(nn.Module):
@@ -89,7 +89,7 @@ class Permute(nn.Module):
         super().__init__()
         self.dims = dims
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:  # type: ignore[override]
+    def forward(self, x: torch.Tensor) -> torch.Tensor:  
         return x.permute(*self.dims)
 
 
@@ -108,21 +108,21 @@ def position_grid_to_embed(
     """
     H, W, grid_dim = pos_grid.shape
     assert grid_dim == 2
-    pos_flat = pos_grid.reshape(-1, grid_dim)  # Flatten to (H*W, 2)
+    pos_flat = pos_grid.reshape(-1, grid_dim)  
 
-    # Process x and y coordinates separately
-    emb_x = make_sincos_pos_embed(embed_dim 
-    emb_y = make_sincos_pos_embed(embed_dim 
+    
+    emb_x = make_sincos_pos_embed(embed_dim // 2, pos_flat[:, 0], omega_0=omega_0)  
+    emb_y = make_sincos_pos_embed(embed_dim // 2, pos_flat[:, 1], omega_0=omega_0)  
 
-    # Combine and reshape
-    emb = torch.cat([emb_x, emb_y], dim=-1)  # [1, H*W, D]
+    
+    emb = torch.cat([emb_x, emb_y], dim=-1)  
 
-    return emb.view(H, W, embed_dim)  # [H, W, D]
+    return emb.view(H, W, embed_dim)  
 
 
 def make_sincos_pos_embed(embed_dim: int, pos: torch.Tensor, omega_0: float = 100) -> torch.Tensor:
     """
-    This function generates a 1D positional embedding from a given grid using sine and cosine functions. # noqa
+    This function generates a 1D positional embedding from a given grid using sine and cosine functions. 
 
     Args:
     - embed_dim: The embedding dimension.
@@ -132,21 +132,21 @@ def make_sincos_pos_embed(embed_dim: int, pos: torch.Tensor, omega_0: float = 10
     - emb: The generated 1D positional embedding.
     """
     assert embed_dim % 2 == 0
-    omega = torch.arange(embed_dim 
+    omega = torch.arange(embed_dim // 2, dtype=torch.float32, device=pos.device)
     omega /= embed_dim / 2.0
-    omega = 1.0 / omega_0**omega  # (D/2,)
+    omega = 1.0 / omega_0**omega  
 
-    pos = pos.reshape(-1)  # (M,)
-    out = torch.einsum("m,d->md", pos, omega)  # (M, D/2), outer product
+    pos = pos.reshape(-1)  
+    out = torch.einsum("m,d->md", pos, omega)  
 
-    emb_sin = torch.sin(out)  # (M, D/2)
-    emb_cos = torch.cos(out)  # (M, D/2)
+    emb_sin = torch.sin(out)  
+    emb_cos = torch.cos(out)  
 
-    emb = torch.cat([emb_sin, emb_cos], dim=1)  # (M, D)
+    emb = torch.cat([emb_sin, emb_cos], dim=1)  
     return emb.float()
 
 
-# Inspired by https://github.com/microsoft/moge
+
 
 
 def create_uv_grid(
@@ -173,35 +173,35 @@ def create_uv_grid(
     Returns:
         torch.Tensor: A (width, height, 2) tensor of UV coordinates.
     """
-    # Derive aspect ratio if not explicitly provided
+    
     if aspect_ratio is None:
         aspect_ratio = float(width) / float(height)
 
-    # Compute normalized spans for X and Y
+    
     diag_factor = (aspect_ratio**2 + 1.0) ** 0.5
     span_x = aspect_ratio / diag_factor
     span_y = 1.0 / diag_factor
 
-    # Establish the linspace boundaries
+    
     left_x = -span_x * (width - 1) / width
     right_x = span_x * (width - 1) / width
     top_y = -span_y * (height - 1) / height
     bottom_y = span_y * (height - 1) / height
 
-    # Generate 1D coordinates
+    
     x_coords = torch.linspace(left_x, right_x, steps=width, dtype=dtype, device=device)
     y_coords = torch.linspace(top_y, bottom_y, steps=height, dtype=dtype, device=device)
 
-    # Create 2D meshgrid (width x height) and stack into UV
+    
     uu, vv = torch.meshgrid(x_coords, y_coords, indexing="xy")
     uv_grid = torch.stack((uu, vv), dim=-1)
 
     return uv_grid
 
 
-# -----------------------------------------------------------------------------
-# Interpolation (safe interpolation, avoid INT_MAX overflow)
-# -----------------------------------------------------------------------------
+
+
+
 def custom_interpolate(
     x: torch.Tensor,
     size: Union[Tuple[int, int], None] = None,
@@ -220,7 +220,7 @@ def custom_interpolate(
     total = size[0] * size[1] * x.shape[0] * x.shape[1]
 
     if total > INT_MAX:
-        chunks = torch.chunk(x, chunks=(total 
+        chunks = torch.chunk(x, chunks=(total // INT_MAX) + 1, dim=0)
         outs = [
             nn.functional.interpolate(c, size=size, mode=mode, align_corners=align_corners)
             for c in chunks

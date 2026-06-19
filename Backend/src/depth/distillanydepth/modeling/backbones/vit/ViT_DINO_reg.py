@@ -1,12 +1,12 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-#
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
 
-# References:
-#   https://github.com/facebookresearch/dino/blob/main/vision_transformer.py
-#   https://github.com/rwightman/pytorch-image-models/tree/master/timm/models/vision_transformer.py
+
+
+
+
+
+
+
+
 
 from functools import partial
 import math
@@ -21,12 +21,12 @@ from torch.nn.init import trunc_normal_
 import torch.nn.init
 import torch.nn.functional as F
 
-# from dinov2.layers import Mlp, PatchEmbed, SwiGLUFFNFused, MemEffAttention, NestedTensorBlock as Block
+
 
 logger = logging.getLogger("dinov2")
 
 
-# SSF finetuning originally by dongzelian
+
 def init_ssf_scale_shift(dim):
     scale = nn.Parameter(torch.ones(dim))
     shift = nn.Parameter(torch.zeros(dim))
@@ -49,7 +49,7 @@ def ssf_ada(x, scale, shift):
         )
 
 
-# LoRA finetuning originally by edwardjhu
+
 class LoRALayer:
     def __init__(
         self,
@@ -60,18 +60,18 @@ class LoRALayer:
     ):
         self.r = r
         self.lora_alpha = lora_alpha
-        # Optional dropout
+        
         if lora_dropout > 0.0:
             self.lora_dropout = nn.Dropout(p=lora_dropout)
         else:
             self.lora_dropout = lambda x: x
-        # Mark the weight as unmerged
+        
         self.merged = False
         self.merge_weights = merge_weights
 
 
 class LoRALinear(nn.Linear, LoRALayer):
-    # LoRA implemented in a dense layer
+    
     def __init__(
         self,
         in_features: int,
@@ -79,7 +79,7 @@ class LoRALinear(nn.Linear, LoRALayer):
         r: int = 0,
         lora_alpha: int = 1,
         lora_dropout: float = 0.0,
-        fan_in_fan_out: bool = False,  # Set this to True if the layer to replace stores weight like (fan_in, fan_out)
+        fan_in_fan_out: bool = False,  
         merge_weights: bool = True,
         **kwargs,
     ):
@@ -93,14 +93,14 @@ class LoRALinear(nn.Linear, LoRALayer):
         )
 
         self.fan_in_fan_out = fan_in_fan_out
-        # Actual trainable parameters
+        
         if r > 0:
             self.lora_A = nn.Parameter(self.weight.new_zeros((r, in_features)))
             self.lora_B = nn.Parameter(self.weight.new_zeros((out_features, r)))
             self.scaling = self.lora_alpha / self.r
-            # Freezing the pre-trained weight matrix
+            
             self.weight.requires_grad = False
-        # import pdb;pdb.set_trace()
+        
 
         self.reset_parameters()
         if fan_in_fan_out:
@@ -108,29 +108,29 @@ class LoRALinear(nn.Linear, LoRALayer):
 
     def reset_parameters(self):
         if hasattr(self, "lora_A"):
-            # initialize B the same way as the default for nn.Linear and A to zero
-            # this is different than what is described in the paper but should not affect performance
+            
+            
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
         else:
             nn.Linear.reset_parameters(self)
 
-    # def train(self, mode: bool = True):
-    #     def T(w):
-    #         return w.transpose(0, 1) if self.fan_in_fan_out else w
-    #     nn.Linear.train(self, mode)
-    #     if mode:
-    #         if self.merge_weights and self.merged:
-    #             # Make sure that the weights are not merged
-    #             if self.r > 0:
-    #                 self.weight.data -= T(self.lora_B @ self.lora_A) * self.scaling
-    #             self.merged = False
-    #     else:
-    #         if self.merge_weights and not self.merged:
-    #             # Merge the weights and mark it
-    #             if self.r > 0:
-    #                 self.weight.data += T(self.lora_B @ self.lora_A) * self.scaling
-    #             self.merged = True
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     def forward(self, x: torch.Tensor):
         def T(w):
@@ -163,7 +163,7 @@ def drop_path(x, drop_prob: float = 0.0, training: bool = False):
     keep_prob = 1 - drop_prob
     shape = (x.shape[0],) + (1,) * (
         x.ndim - 1
-    )  # work with diff dim tensors, not just 2D ConvNets
+    )  
     random_tensor = x.new_empty(shape).bernoulli_(keep_prob)
     if keep_prob > 0.0:
         random_tensor.div_(keep_prob)
@@ -224,8 +224,8 @@ class PatchEmbed(nn.Module):
         image_HW = make_2tuple(img_size)
         patch_HW = make_2tuple(patch_size)
         patch_grid_size = (
-            image_HW[0] 
-            image_HW[1] 
+            image_HW[0] // patch_HW[0],
+            image_HW[1] // patch_HW[1],
         )
 
         self.img_size = image_HW
@@ -249,7 +249,7 @@ class PatchEmbed(nn.Module):
                 self.ssf_scale_1, self.ssf_shift_1 = init_ssf_scale_shift(embed_dim)
             else:
                 pass
-                # raise NotImplementedError()
+                
         else:
             self.tuning_mode = None
 
@@ -264,14 +264,14 @@ class PatchEmbed(nn.Module):
             f"Input image width {W} is not a multiple of patch width: {patch_W}"
         )
 
-        x = self.proj(x)  # B C H W
+        x = self.proj(x)  
         H, W = x.size(2), x.size(3)
-        x = x.flatten(2).transpose(1, 2)  # B HW C
+        x = x.flatten(2).transpose(1, 2)  
         x = self.norm(x)
         if self.tuning_mode == "ssf":
             x = ssf_ada(x, self.ssf_scale_1, self.ssf_shift_1)
         if not self.flatten_embedding:
-            x = x.reshape(-1, H, W, self.embed_dim)  # B H W C
+            x = x.reshape(-1, H, W, self.embed_dim)  
         return x
 
     def flops(self) -> float:
@@ -316,7 +316,7 @@ class Mlp(nn.Module):
                 self.ssf_scale_2, self.ssf_shift_2 = init_ssf_scale_shift(out_features)
             else:
                 pass
-                # raise NotImplementedError()
+                
         else:
             self.tuning_mode = None
 
@@ -361,7 +361,7 @@ class SwiGLUFFN(nn.Module):
                 self.ssf_scale_2, self.ssf_shift_2 = init_ssf_scale_shift(out_features)
             else:
                 pass
-                # raise NotImplementedError()
+                
         else:
             self.tuning_mode = None
 
@@ -383,7 +383,7 @@ class SwiGLUFFN(nn.Module):
 try:
     from xformers.ops import SwiGLU
 
-    # import numpy.bool
+    
     XFORMERS_AVAILABLE = True
 except ImportError:
     SwiGLU = SwiGLUFFN
@@ -402,7 +402,7 @@ class SwiGLUFFNFused(SwiGLU):
     ) -> None:
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        hidden_features = (int(hidden_features * 2 / 3) + 7) 
+        hidden_features = (int(hidden_features * 2 / 3) + 7) // 8 * 8
         super().__init__(
             in_features=in_features,
             hidden_features=hidden_features,
@@ -416,7 +416,7 @@ try:
     from xformers.components.attention import ScaledDotProduct
     from xformers.components import MultiHeadDispatch
 
-    # import numpy.bool
+    
     XFORMERS_AVAILABLE = True
 except ImportError:
     XFORMERS_AVAILABLE = False
@@ -436,7 +436,7 @@ class Attention(nn.Module):
     ) -> None:
         super().__init__()
         self.num_heads = num_heads
-        head_dim = dim 
+        head_dim = dim // num_heads
         self.scale = head_dim**-0.5
 
         if tuning_mode == "lora":
@@ -461,27 +461,27 @@ class Attention(nn.Module):
                 self.ssf_scale_2, self.ssf_shift_2 = init_ssf_scale_shift(dim)
             else:
                 pass
-                # raise NotImplementedError()
+                
         else:
             self.tuning_mode = None
 
-        # if not self.training:
-        #
-        # self.attn = ScaledDotProduct()
-        # self.attn = MultiHeadDispatch(dim_model=EMB, residual_dropout=DROPOUT, num_heads=HEADS, attention=attn)
+        
+        
+        
+        
 
     def forward(self, x: Tensor, attn_bias=None) -> Tensor:
         B, N, C = x.shape
         if self.tuning_mode == "ssf":
             qkv = (
                 ssf_ada(self.qkv(x), self.ssf_scale_1, self.ssf_shift_1)
-                .reshape(B, N, 3, self.num_heads, C 
+                .reshape(B, N, 3, self.num_heads, C // self.num_heads)
                 .permute(2, 0, 3, 1, 4)
             )
         else:
             qkv = (
                 self.qkv(x)
-                .reshape(B, N, 3, self.num_heads, C 
+                .reshape(B, N, 3, self.num_heads, C // self.num_heads)
                 .permute(2, 0, 3, 1, 4)
             )
 
@@ -507,17 +507,17 @@ class Attention(nn.Module):
 class MemEffAttention(Attention):
     def forward(self, x: Tensor, attn_bias=None) -> Tensor:
         if not XFORMERS_AVAILABLE:
-            # if True:
+            
             assert attn_bias is None, "xFormers is required for nested tensors usage"
             return super().forward(x, attn_bias)
 
         B, N, C = x.shape
         if self.tuning_mode == "ssf":
             qkv = ssf_ada(self.qkv(x), self.ssf_scale_1, self.ssf_shift_1).reshape(
-                B, N, 3, self.num_heads, C 
+                B, N, 3, self.num_heads, C // self.num_heads
             )
         else:
-            qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C 
+            qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads)
 
         q, k, v = unbind(qkv, 2)
         if attn_bias is not None:
@@ -538,7 +538,7 @@ try:
     from xformers.ops import fmha
     from xformers.ops import scaled_index_add, index_select_cat
 
-    # import numpy.bool
+    
     XFORMERS_AVAILABLE = True
 except ImportError:
     XFORMERS_AVAILABLE = False
@@ -564,7 +564,7 @@ class Block(nn.Module):
         tuning_mode: Optional[int] = None,
     ) -> None:
         super().__init__()
-        # print(f"biases: qkv: {qkv_bias}, proj: {proj_bias}, ffn: {ffn_bias}")
+        
         self.norm1 = norm_layer(dim)
         self.attn = attn_class(
             dim,
@@ -583,7 +583,7 @@ class Block(nn.Module):
                 self.ssf_scale_2, self.ssf_shift_2 = init_ssf_scale_shift(dim)
             else:
                 pass
-                # raise NotImplementedError()
+                
         else:
             self.tuning_mode = None
 
@@ -629,7 +629,7 @@ class Block(nn.Module):
                 return self.ls2(self.mlp(self.norm2(x)))
 
         if self.training and self.sample_drop_ratio > 0.1:
-            # the overhead is compensated only for a drop path rate larger than 0.1
+            
             x = drop_add_residual_stochastic_depth(
                 x,
                 residual_func=attn_residual_func,
@@ -643,7 +643,7 @@ class Block(nn.Module):
             )
         elif self.training and self.sample_drop_ratio > 0.0:
             x = x + self.drop_path1(attn_residual_func(x, attn_bias))
-            x = x + self.drop_path1(ffn_residual_func(x))  # FIXME: drop_path2
+            x = x + self.drop_path1(ffn_residual_func(x))  
         else:
             x = x + attn_residual_func(x, attn_bias)
             x = x + ffn_residual_func(x)
@@ -656,13 +656,13 @@ def drop_add_residual_stochastic_depth(
     sample_drop_ratio: float = 0.0,
     attn_bias=None,
 ) -> Tensor:
-    # 1) extract subset using permutation
+    
     b, n, d = x.shape
     sample_subset_size = max(int(b * (1 - sample_drop_ratio)), 1)
     brange = (torch.randperm(b, device=x.device))[:sample_subset_size]
     x_subset = x[brange]
 
-    # 2) apply residual_func to get residual
+    
     residual = residual_func(x_subset, attn_bias)
 
     x_flat = x.flatten(1)
@@ -670,7 +670,7 @@ def drop_add_residual_stochastic_depth(
 
     residual_scale_factor = b / sample_subset_size
 
-    # 3) add the residual
+    
     x_plus_residual = torch.index_add(
         x_flat, 0, brange, residual.to(dtype=x.dtype), alpha=residual_scale_factor
     )
@@ -742,18 +742,18 @@ def drop_add_residual_stochastic_depth_list(
     sample_drop_ratio: float = 0.0,
     scaling_vector=None,
 ) -> Tensor:
-    # 1) generate random set of indices for dropping samples in the batch
+    
     branges_scales = [
         get_branges_scales(x, sample_drop_ratio=sample_drop_ratio) for x in x_list
     ]
     branges = [s[0] for s in branges_scales]
     residual_scale_factors = [s[1] for s in branges_scales]
 
-    # 2) get attention bias and index+concat the tensors
+    
     attn_bias, x_cat = get_attn_bias_and_cat(x_list, branges)
 
-    # 3) apply residual_func to get residual, and split the result
-    residual_list = attn_bias.split(residual_func(x_cat, attn_bias=attn_bias))  # type: ignore
+    
+    residual_list = attn_bias.split(residual_func(x_cat, attn_bias=attn_bias))  
 
     outputs = []
     for x, brange, residual, residual_scale_factor in zip(
@@ -868,7 +868,7 @@ class DinoVisionTransformer(nn.Module):
         proj_bias=True,
         drop_path_rate=0.0,
         drop_path_uniform=False,
-        init_values=1e-5,  # for layerscale: None or 0 => no layerscale
+        init_values=1e-5,  
         embed_layer=PatchEmbed,
         act_layer=nn.GELU,
         block_fn=Block,
@@ -910,7 +910,7 @@ class DinoVisionTransformer(nn.Module):
         norm_layer = partial(nn.LayerNorm, eps=1e-6)
 
         self.num_features = self.embed_dim = (
-            embed_dim  # num_features for consistency with other models
+            embed_dim  
         )
         self.num_tokens = 1
         self.n_blocks = depth
@@ -926,7 +926,7 @@ class DinoVisionTransformer(nn.Module):
                 self.ssf_scale_1, self.ssf_shift_1 = init_ssf_scale_shift(embed_dim)
             else:
                 pass
-                # raise NotImplementedError()
+                
         else:
             self.tuning_mode = None
         tuning_mode_list = [tuning_mode] * depth
@@ -957,7 +957,7 @@ class DinoVisionTransformer(nn.Module):
         else:
             dpr = [
                 x.item() for x in torch.linspace(0, drop_path_rate, depth)
-            ]  # stochastic depth decay rule
+            ]  
 
         if ffn_layer == "mlp":
             logger.info("using MLP layer as FFN")
@@ -995,9 +995,9 @@ class DinoVisionTransformer(nn.Module):
         if block_chunks > 0:
             self.chunked_blocks = True
             chunked_blocks = []
-            chunksize = depth 
+            chunksize = depth // block_chunks
             for i in range(0, depth, chunksize):
-                # this is to keep the block index consistent if we chunk the block list
+                
                 chunked_blocks.append(
                     [nn.Identity()] * i + blocks_list[i : i + chunksize]
                 )
@@ -1030,10 +1030,10 @@ class DinoVisionTransformer(nn.Module):
         class_pos_embed = pos_embed[:, 0]
         patch_pos_embed = pos_embed[:, 1:]
         dim = x.shape[-1]
-        w0 = w 
-        h0 = h 
-        # we add a small number to avoid floating point error in the interpolation
-        # see discussion at https://github.com/facebookresearch/dino/issues/8
+        w0 = w // self.patch_size
+        h0 = h // self.patch_size
+        
+        
         w0, h0 = w0 + self.interpolate_offset, h0 + self.interpolate_offset
 
         sqrt_N = math.sqrt(N)
@@ -1103,7 +1103,7 @@ class DinoVisionTransformer(nn.Module):
     def forward_features(self, x, masks=None):
         if isinstance(x, list):
             return self.forward_features_list(x, masks)
-        # import pdb;pdb.set_trace()
+        
         if len(x.size()) == 3:
             x = x[None]
 
@@ -1114,7 +1114,7 @@ class DinoVisionTransformer(nn.Module):
             pad_h = 0
         if pad_w == self.patch_size:
             pad_w = 0
-        # x = nn.functional.pad(x, (pad_h
+        
         if pad_h + pad_w > 0:
             x = torch.nn.functional.interpolate(
                 x, (H + pad_h, W + pad_w), mode="bilinear"
@@ -1122,26 +1122,26 @@ class DinoVisionTransformer(nn.Module):
 
         x = self.prepare_tokens_with_masks(x, masks)
 
-        # for blk in self.blocks:
-        # x = blk(x)
+        
+        
 
-        # x_norm = self.norm(x)
-        # if self.tuning_mode == 'ssf':
-        # x_norm = ssf_ada(x_norm, self.ssf_scale_1, self.ssf_shift_1)
+        
+        
+        
 
-        # return {
-        #     "x_norm_clstoken": x_norm[:, 0],
-        #     "x_norm_regtokens": x_norm[:, 1 : self.num_register_tokens + 1],
-        #     "x_norm_patchtokens": x_norm[:, self.num_register_tokens + 1 :],
-        #     "x_prenorm": x,
-        #     "masks": masks,
-        # }
-        # features = []
-        # features.append(x_norm)
-        # features.append(x_norm)
-        # features.append(x_norm)
-        # features.append(x_norm)
-        # return [features, (B, (H+pad_h)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         if self.multi_output == False:
             for blk in self.blocks:
@@ -1159,8 +1159,8 @@ class DinoVisionTransformer(nn.Module):
                 features,
                 (
                     B,
-                    (H + pad_h) 
-                    (W + pad_w) 
+                    (H + pad_h) // self.patch_size,
+                    (W + pad_w) // self.patch_size,
                     H,
                     W,
                     self.num_register_tokens,
@@ -1171,15 +1171,15 @@ class DinoVisionTransformer(nn.Module):
             for blk in self.blocks:
                 for idx, sub_blk in enumerate(blk):
                     x = sub_blk(x)
-                    if (idx + 1) % (len(blk) 
+                    if (idx + 1) % (len(blk) // 4) == 0:
                         features.append(x)
 
             return [
                 features,
                 (
                     B,
-                    (H + pad_h) 
-                    (W + pad_w) 
+                    (H + pad_h) // self.patch_size,
+                    (W + pad_w) // self.patch_size,
                     H,
                     W,
                     self.num_register_tokens,
@@ -1188,7 +1188,7 @@ class DinoVisionTransformer(nn.Module):
 
     def _get_intermediate_layers_not_chunked(self, x, n=1):
         x = self.prepare_tokens_with_masks(x)
-        # If n is an int, take the n last blocks. If it's a list, take them
+        
         output, total_block_len = [], len(self.blocks)
         blocks_to_take = (
             range(total_block_len - n, total_block_len) if isinstance(n, int) else n
@@ -1205,12 +1205,12 @@ class DinoVisionTransformer(nn.Module):
     def _get_intermediate_layers_chunked(self, x, n=1):
         x = self.prepare_tokens_with_masks(x)
         output, i, total_block_len = [], 0, len(self.blocks[-1])
-        # If n is an int, take the n last blocks. If it's a list, take them
+        
         blocks_to_take = (
             range(total_block_len - n, total_block_len) if isinstance(n, int) else n
         )
         for block_chunk in self.blocks:
-            for blk in block_chunk[i:]:  # Passing the nn.Identity()
+            for blk in block_chunk[i:]:  
                 x = blk(x)
                 if i in blocks_to_take:
                     output.append(x)
@@ -1223,7 +1223,7 @@ class DinoVisionTransformer(nn.Module):
     def get_intermediate_layers(
         self,
         x: torch.Tensor,
-        n: Union[int, Sequence] = 1,  # Layers or n last layers to take
+        n: Union[int, Sequence] = 1,  
         reshape: bool = False,
         return_class_token: bool = False,
         norm=True,
@@ -1239,7 +1239,7 @@ class DinoVisionTransformer(nn.Module):
         if reshape:
             B, _, w, h = x.shape
             outputs = [
-                out.reshape(B, w 
+                out.reshape(B, w // self.patch_size, h // self.patch_size, -1)
                 .permute(0, 3, 1, 2)
                 .contiguous()
                 for out in outputs
@@ -1251,10 +1251,10 @@ class DinoVisionTransformer(nn.Module):
     def forward(self, *args, is_training=False, **kwargs):
         ret = self.forward_features(*args, **kwargs)
         return ret
-        # if is_training:
-        #     return ret
-        # else:
-        #     return self.head(ret["x_norm_clstoken"])
+        
+        
+        
+        
 
 
 def init_weights_vit_timm(module: nn.Module, name: str = ""):
@@ -1276,7 +1276,7 @@ def load_ckpt_dino(checkpoint, model):
             del model.mask_token
             return
 
-        # import pdb;pdb.set_trace()
+        
         try:
             model.load_state_dict(state_dict, strict=True)
             print("load dinov2 pretrain weights successfully ")
@@ -1464,29 +1464,29 @@ if __name__ == "__main__":
     except:
         from mmengine import Config
 
-    # rgb = torch.rand((2, 3, 518, 518)).cuda()
+    
 
-    # cfg.data_basic['crop_size']['0']
-    # cfg.data_basic['crop_size']['1']
-    # cfg = Config.fromfile('configs/metric3d_configs/RAFTDecoder_xugk/vit.raft5.large.kitti.py')
-    # cfg['tuning_mode'] = 'ssf'
-    # rgb = torch.arange(0, 2*3*1036*1036, 1).cuda().float().view(2, 3, 1036, 1036)
+    
+    
+    
+    
+    
 
     rgb = torch.zeros(1, 3, 616, 1064).cuda()
     model = vit_large_reg(
         checkpoint="./data/weights/dinov2/dinov2_vitl14_reg4_pretrain.pth",
         tuning_mode=None,
-        # kwarg=cfg
+        
     ).cuda()
 
-    # model = vit_large_reg(tuning_mode='ssf').cuda()
+    
 
     out1 = model(rgb)
     import pdb
 
     pdb.set_trace()
-    # import timm
-    # model2 = timm.models.vision_transformer.vit_large_patch14_dinov2().cuda()
-    # timm.models.load_checkpoint(model2, '/cpfs02/shared/public/yvan/pretrained_weight_repo/vit/dinov2_vitl14_pretrain.pth', filter_fn=timm.models.vision_transformer.checkpoint_filter_fn)
-    # out2 = model2(rgb)
+    
+    
+    
+    
     temp = 0

@@ -97,7 +97,7 @@ def runServer(host, queue=None):
 
     logging.info(f"Starting AE comms server on {host}...")
 
-    parsed = urlparse(host if "://" in host else f"
+    parsed = urlparse(host if "://" in host else f"//{host}", scheme="http")
     hostname = parsed.hostname or "0.0.0.0"
     port = parsed.port or 8080
 
@@ -192,11 +192,11 @@ def runServer(host, queue=None):
 
     logging.info(f"AE Comms Server running on {hostname}:{port}")
 
-    # Werkzeug's request handler exposes ``werkzeug.socket`` in the WSGI
-    # environ, which ``simple-websocket`` (used by python-engineio for
-    # threading-mode async) requires to upgrade HTTP -> WebSocket. wsgiref
-    # provides no such hook, so the upgrade dies with
-    # "Cannot obtain socket from WSGI environment.".
+    
+    
+    
+    
+    
     from werkzeug.serving import make_server, WSGIRequestHandler
 
     class QuietHandler(WSGIRequestHandler):

@@ -92,7 +92,7 @@ def stem_b4_transpose(in_chs, out_chs, activation):
     return nn.Sequential(
         ConvTransposeNorm(in_chs, out_chs, 3, 2, 1),
         activation(),
-        ConvTransposeNorm(out_chs, out_chs 
+        ConvTransposeNorm(out_chs, out_chs // 2, 3, 2, 1),
         activation())
 
 

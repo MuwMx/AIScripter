@@ -4,32 +4,32 @@ import json
 import subprocess
 import argparse
 import math
-import urllib.parse  # Добавлено для лечения путей от %20 и прочего URL-мусора
+import urllib.parse  
 import cv2
 import numpy as np
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
-# =====================================================================
-# АВТОНОМНАЯ МАРШРУТИЗАЦИЯ (Без зависимости от constants.py)
-# =====================================================================
+
+
+
 ROOT_DIR = os.path.dirname(sys.executable)
 
-# Точный путь к твоему FFmpeg
+
 FFMPEG_EXE = os.path.join(ROOT_DIR, "ffmpeg_shared", "ffmpeg.exe")
 
-# Изоляция кэша моделей
+
 CACHE_DIR = os.path.join(ROOT_DIR, "backend", "weights", "cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
 os.environ["HF_HOME"] = CACHE_DIR
 os.environ["XDG_CACHE_HOME"] = CACHE_DIR
 
-# =====================================================================
-# 1. МАТЕМАТИКА SSIM (Оптимизировано под CUDA)
-# =====================================================================
+
+
+
 def gaussian_window(window_size, sigma):
-    gauss = torch.tensor([math.exp(-(x - window_size
+    gauss = torch.tensor([math.exp(-(x - window_size//2)**2 / float(2 * sigma**2)) for x in range(window_size)])
     return gauss / gauss.sum()
 
 def create_window(window_size, channel):
@@ -40,19 +40,19 @@ def create_window(window_size, channel):
 
 def calculate_ssim(img1, img2, window, window_size=11):
     channel = img1.size(1)
-    mu1 = F.conv2d(img1, window, padding=window_size
-    mu2 = F.conv2d(img2, window, padding=window_size
+    mu1 = F.conv2d(img1, window, padding=window_size//2, groups=channel)
+    mu2 = F.conv2d(img2, window, padding=window_size//2, groups=channel)
     mu1_sq, mu2_sq, mu1_mu2 = mu1.pow(2), mu2.pow(2), mu1 * mu2
-    sigma1_sq = F.conv2d(img1 * img1, window, padding=window_size
-    sigma2_sq = F.conv2d(img2 * img2, window, padding=window_size
-    sigma12 = F.conv2d(img1 * img2, window, padding=window_size
+    sigma1_sq = F.conv2d(img1 * img1, window, padding=window_size//2, groups=channel) - mu1_sq
+    sigma2_sq = F.conv2d(img2 * img2, window, padding=window_size//2, groups=channel) - mu2_sq
+    sigma12 = F.conv2d(img1 * img2, window, padding=window_size//2, groups=channel) - mu1_mu2
     C1, C2 = 0.01 ** 2, 0.03 ** 2
     ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
     return ssim_map.mean().item()
 
-# =====================================================================
-# 2. КЛАСС ДЕДУПЛИКАЦИИ
-# =====================================================================
+
+
+
 class DedupWorker:
     def __init__(self, threshold=0.995, sample_size=224):
         self.device = torch.device("cuda")
@@ -61,7 +61,7 @@ class DedupWorker:
         self.window_size = 11
         self.window = create_window(self.window_size, 3).to(self.device).half()
         
-        # ЛОГ ИНИЦИАЛИЗАЦИИ
+        
         print(f"[CLEAN] Initializing SSIM (CUDA fp16). Threshold: {self.threshold}")
 
     def _prepare_frame(self, frame_bytes, width, height):
@@ -71,11 +71,11 @@ class DedupWorker:
         return tensor_resized, frame_bytes
 
     def process(self, input_path, output_video, output_json):
-        # 1. ЛЕЧИМ ПУТЬ ОТ URL-МУСОРА (Декодируем %20 в пробелы и нормализуем слеши)
+        
         input_path = urllib.parse.unquote(input_path)
         input_path = os.path.normpath(input_path)
         
-        # 2. ЖЕСТКАЯ ПРОВЕРКА СУЩЕСТВОВАНИЯ ФАЙЛА ИСХОДНИКА
+        
         if not os.path.exists(input_path):
             print(f"[CRITICAL ERROR] Source file not found: {input_path}")
             print("Check if After Effects successfully rendered the chunk.")
@@ -83,7 +83,7 @@ class DedupWorker:
 
         print(f"[CLEAN] Normalized input path: {input_path}")
 
-        # Читаем метаданные через OpenCV безопасным путем
+        
         cap = cv2.VideoCapture(input_path)
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -91,12 +91,12 @@ class DedupWorker:
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         cap.release()
 
-        # 3. ПРОВЕРКА НА БИТЫЙ/ПУСТОЙ РЕНДЕР ИЗ AE
+        
         if total_frames == 0 or width == 0:
             print(f"[CRITICAL ERROR] OpenCV failed to read the video. The file might be corrupted.")
             return
 
-        # ЛОГ МЕТАДАННЫХ ВИДЕО (Вызывается только при успешном чтении)
+        
         print(f"[CLEAN] Video: {width}x{height} | Frames: {total_frames}")
 
         cmd_in = [
@@ -145,7 +145,7 @@ class DedupWorker:
         process_in.wait()
         process_out.wait()
 
-        # ЛОГ УСПЕШНОГО ЗАВЕРШЕНИЯ
+        
         print(f"\n[CLEAN] Done! Duplicates removed: {duplicates_count}")
 
         with open(output_json, 'w', encoding='utf-8') as f:

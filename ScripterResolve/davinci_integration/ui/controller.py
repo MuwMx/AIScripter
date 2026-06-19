@@ -41,34 +41,34 @@ class Controller(QObject):
         self.orchestrator = orchestrator
         self.worker = None
 
-        # Инициализируем хранилище настроек
+        
         self.settings = QSettings("MyScripter", "ResolveIntegration")
         
-        # Автозагрузка папки при старте приложения
+        
         import os
         saved_dir = self.settings.value("work_dir", "")
         if saved_dir and os.path.exists(saved_dir):
             self.view.set_work_dir(saved_dir)
 
-        # Перенаправляем кнопку обзора на логику контроллера для сохранения пути
-        self.view.dir_btn.clicked.disconnect()  # отключаем стандартный метод окна
+        
+        self.view.dir_btn.clicked.disconnect()  
         self.view.dir_btn.clicked.connect(self.change_workspace)
 
-      # Подключаем кнопку запуска пайплайна
+      
         self.view.run_btn.clicked.connect(self.start_pipeline)
 
     def start_pipeline(self):
-        # Блокируем UI и чистим старый прогресс перед стартом
+        
         self.view.run_btn.setEnabled(False)
         self.view.progress_bar.setValue(0)
         self.view.log_console.clear()
 
-        # Формируем список активных задач на основе чекбоксов
+        
         active_tasks = []
         if self.view.chk_clean.isChecked(): active_tasks.append("clean")
         if self.view.chk_rife.isChecked(): active_tasks.append("rife")
 
-        # Если ни один модуль не выбран — стопим запуск
+        
         if not active_tasks:
             self.view.append_log("[ERROR] Select at least one module (Clean or RIFE) to run pipeline!")
             self.view.run_btn.setEnabled(True)
@@ -77,10 +77,10 @@ class Controller(QObject):
         mode = "Bake"
         work_dir = getattr(self.view, 'selected_dir', None)
 
-        # Корректно забираем значения из новых слайдеров и дропдаунов
+        
         rife_text = self.view.rife_scale.currentText()
-        scale_val = int(rife_text.replace("x", "")) # Переведет "4x" в чистую 4
-        thresh_val = self.view.clean_slider.value() / 1000.0 # Переведет 995 в 0.995
+        scale_val = int(rife_text.replace("x", "")) 
+        thresh_val = self.view.clean_slider.value() / 1000.0 
 
         ui_settings = {
             "work_dir": work_dir,
@@ -88,7 +88,7 @@ class Controller(QObject):
             "threshold": thresh_val
         }
 
-        # Запускаем поток, передавая массив задач
+        
         self.worker = PipelineWorker(self.orchestrator, active_tasks, mode, ui_settings)
         self.worker.log_signal.connect(self.view.append_log)
         self.worker.progress_signal.connect(self.view.set_progress_smooth)
@@ -104,12 +104,12 @@ class Controller(QObject):
         """Открывает диалог и сохраняет выбранный путь в настройки с валидацией папок."""
         folder = QFileDialog.getExistingDirectory(self.view, "Select Working Directory")
         if folder:
-            # Черный список системных путей
+            
             forbidden = ["C:/", "C:/Program Files", "C:/Windows", "C:\\", "C:\\Program Files", "C:\\Windows"]
             if any(folder.startswith(f) for f in forbidden) or "AppData" in folder:
                 self.view.append_log("[ERROR] Selection of root drives, system directories or AppData is forbidden!")
                 return
                 
             self.view.set_work_dir(folder)
-            self.settings.setValue("work_dir", folder)  # Запись в реестр
+            self.settings.setValue("work_dir", folder)  
     

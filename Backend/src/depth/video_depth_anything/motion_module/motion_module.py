@@ -1,8 +1,8 @@
-# This file is originally from AnimateDiff/animatediff/models/motion_module.py at main · guoyww/AnimateDiff
-# SPDX-License-Identifier: Apache-2.0 license
-#
-# This file may have been modified by ByteDance Ltd. and/or its affiliates on [date of modification]
-# Original file was released under [ Apache-2.0 license], with the full license text available at [https://github.com/guoyww/AnimateDiff?tab=Apache-2.0-1-ov-file#readme].
+
+
+
+
+
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -22,7 +22,7 @@ except ImportError:
 
 
 def zero_module(module):
-    # Zero out the parameters of a module and return it.
+    
     for p in module.parameters():
         p.detach().zero_()
     return module
@@ -45,7 +45,7 @@ class TemporalModule(nn.Module):
         self.temporal_transformer = TemporalTransformer3DModel(
             in_channels=in_channels,
             num_attention_heads=num_attention_heads,
-            attention_head_dim=in_channels 
+            attention_head_dim=in_channels // num_attention_heads,
             num_layers=num_transformer_block,
             num_attention_blocks=num_attention_blocks,
             norm_num_groups=norm_num_groups,
@@ -61,7 +61,7 @@ class TemporalModule(nn.Module):
         hidden_states, output_hidden_state_list = self.temporal_transformer(hidden_states, encoder_hidden_states, attention_mask, cached_hidden_state_list)
 
         output = hidden_states
-        return output, output_hidden_state_list  # list of hidden states
+        return output, output_hidden_state_list  
 
 
 class TemporalTransformer3DModel(nn.Module):
@@ -113,9 +113,9 @@ class TemporalTransformer3DModel(nn.Module):
         hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim).contiguous()
         hidden_states = self.proj_in(hidden_states)
 
-        # Transformer Blocks
+        
         if cached_hidden_state_list is not None:
-            n = len(cached_hidden_state_list) 
+            n = len(cached_hidden_state_list) // len(self.transformer_blocks)
         else:
             n = 0
         for i, block in enumerate(self.transformer_blocks):
@@ -123,7 +123,7 @@ class TemporalTransformer3DModel(nn.Module):
                                                      cached_hidden_state_list=cached_hidden_state_list[i*n:(i+1)*n] if n else None)
             output_hidden_state_list.extend(hidden_state_list)
 
-        # output
+        
         hidden_states = self.proj_out(hidden_states)
         hidden_states = hidden_states.reshape(batch, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
 
@@ -239,7 +239,7 @@ class TemporalAttention(CrossAttention):
             raise NotImplementedError
 
     def forward(self, hidden_states, encoder_hidden_states=None, attention_mask=None, video_length=None, cached_hidden_states=None):
-        # TODO: support cache for these
+        
         assert encoder_hidden_states is None
         assert attention_mask is None
 
@@ -247,7 +247,7 @@ class TemporalAttention(CrossAttention):
         d_in = 0
         if cached_hidden_states is None:
             hidden_states = rearrange(hidden_states, "(b f) d c -> (b d) f c", f=video_length)
-            input_hidden_states = hidden_states  # (bxd) f c
+            input_hidden_states = hidden_states  
         else:
             hidden_states = rearrange(hidden_states, "(b f) d c -> (b d) f c", f=1)
             input_hidden_states = hidden_states
@@ -285,34 +285,34 @@ class TemporalAttention(CrossAttention):
 
 
         use_memory_efficient = XFORMERS_AVAILABLE and self._use_memory_efficient_attention_xformers
-        if use_memory_efficient and (dim 
-            # print('Warning: the dim {} cannot be divided by 8. Fall into normal attention'.format(dim 
+        if use_memory_efficient and (dim // self.heads) % 8 != 0:
+            
             use_memory_efficient = False
 
-        # attention, what we cannot get enough of
+        
         if use_memory_efficient:
             query = self.reshape_heads_to_4d(query)
             key = self.reshape_heads_to_4d(key)
             value = self.reshape_heads_to_4d(value)
 
             hidden_states = self._memory_efficient_attention_xformers(query, key, value, attention_mask)
-            # Some versions of xformers return output in fp32, cast it back to the dtype of the input
+            
             hidden_states = hidden_states.to(query.dtype)
         else:
             query = self.reshape_heads_to_batch_dim(query)
             key = self.reshape_heads_to_batch_dim(key)
             value = self.reshape_heads_to_batch_dim(value)
 
-            if self._slice_size is None or query.shape[0] 
+            if self._slice_size is None or query.shape[0] // self._slice_size == 1:
                 hidden_states = self._attention(query, key, value, attention_mask)
             else:
                 raise NotImplementedError
-                # hidden_states = self._sliced_attention(query, key, value, sequence_length, dim, attention_mask)
+                
 
-        # linear proj
+        
         hidden_states = self.to_out[0](hidden_states)
 
-        # dropout
+        
         hidden_states = self.to_out[1](hidden_states)
 
         hidden_states = rearrange(hidden_states, "(b d) f c -> (b f) d c", d=d)

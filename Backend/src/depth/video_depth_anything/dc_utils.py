@@ -1,8 +1,8 @@
-# This file is originally from DepthCrafter/depthcrafter/utils.py at main · Tencent/DepthCrafter
-# SPDX-License-Identifier: MIT License license
-#
-# This file may have been modified by ByteDance Ltd. and/or its affiliates on [date of modification]
-# Original file is released under [ MIT License license], with the full license text available at [https://github.com/Tencent/DepthCrafter?tab=License-1-ov-file].
+
+
+
+
+
 import numpy as np
 import imageio
 try:
@@ -57,9 +57,9 @@ def read_video_frames(video_path, process_length, target_fps=-1, max_res=-1):
             if not ret or (process_length > 0 and frame_count >= process_length):
                 break
             if frame_count % stride == 0:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Convert BGR to RGB
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  
                 if max_res > 0 and max(original_height, original_width) > max_res:
-                    frame = cv2.resize(frame, (width, height))  # Resize frame
+                    frame = cv2.resize(frame, (width, height))  
                 frames.append(frame)
             frame_count += 1
         cap.release()

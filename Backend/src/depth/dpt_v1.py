@@ -88,10 +88,10 @@ class DPTHead(nn.Module):
                 nn.Conv2d(head_features_1, nclass, kernel_size=1, stride=1, padding=0),
             )
         else:
-            self.scratch.output_conv1 = nn.Conv2d(head_features_1, head_features_1 
+            self.scratch.output_conv1 = nn.Conv2d(head_features_1, head_features_1 // 2, kernel_size=3, stride=1, padding=1)
             
             self.scratch.output_conv2 = nn.Sequential(
-                nn.Conv2d(head_features_1 
+                nn.Conv2d(head_features_1 // 2, head_features_2, kernel_size=3, stride=1, padding=1),
                 nn.ReLU(True),
                 nn.Conv2d(head_features_2, 1, kernel_size=1, stride=1, padding=0),
                 nn.ReLU(True),
@@ -140,7 +140,7 @@ class DPT_DINOv2(nn.Module):
         
         assert encoder in ['vits', 'vitb', 'vitl']
         
-        # in case the Internet connection is not stable, please load the DINOv2 locally
+        
         if localhub:
             self.pretrained = torch.hub.load('torchhub/facebookresearch_dinov2_main', 'dinov2_{:}14'.format(encoder), source='local', pretrained=False)
         else:
@@ -155,7 +155,7 @@ class DPT_DINOv2(nn.Module):
         
         features = self.pretrained.get_intermediate_layers(x, 4, return_class_token=True)
         
-        patch_h, patch_w = h 
+        patch_h, patch_w = h // 14, w // 14
 
         depth = self.depth_head(features, patch_h, patch_w)
         depth = F.interpolate(depth, size=(h, w), mode="bilinear", align_corners=True)

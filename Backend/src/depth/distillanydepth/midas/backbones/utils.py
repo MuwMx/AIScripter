@@ -100,8 +100,8 @@ def forward_adapted_unflatten(pretrained, x, function_name="forward_features"):
             2,
             torch.Size(
                 [
-                    h 
-                    w 
+                    h // pretrained.model.patch_size[1],
+                    w // pretrained.model.patch_size[0],
                 ]
             ),
         )
@@ -163,11 +163,11 @@ def make_backbone_default(
 
     readout_oper = get_readout_oper(vit_features, features, use_readout, start_index_readout)
 
-    # 32, 48, 136, 384
+    
     pretrained.act_postprocess1 = nn.Sequential(
         readout_oper[0],
         Transpose(1, 2),
-        nn.Unflatten(2, torch.Size([size[0] 
+        nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
         nn.Conv2d(
             in_channels=vit_features,
             out_channels=features[0],
@@ -190,7 +190,7 @@ def make_backbone_default(
     pretrained.act_postprocess2 = nn.Sequential(
         readout_oper[1],
         Transpose(1, 2),
-        nn.Unflatten(2, torch.Size([size[0] 
+        nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
         nn.Conv2d(
             in_channels=vit_features,
             out_channels=features[1],
@@ -213,7 +213,7 @@ def make_backbone_default(
     pretrained.act_postprocess3 = nn.Sequential(
         readout_oper[2],
         Transpose(1, 2),
-        nn.Unflatten(2, torch.Size([size[0] 
+        nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
         nn.Conv2d(
             in_channels=vit_features,
             out_channels=features[2],
@@ -226,7 +226,7 @@ def make_backbone_default(
     pretrained.act_postprocess4 = nn.Sequential(
         readout_oper[3],
         Transpose(1, 2),
-        nn.Unflatten(2, torch.Size([size[0] 
+        nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
         nn.Conv2d(
             in_channels=vit_features,
             out_channels=features[3],

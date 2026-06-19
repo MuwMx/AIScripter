@@ -1,4 +1,4 @@
-# IFNet_rife46.py
+
 
 import torch
 import torch.nn as nn
@@ -53,8 +53,8 @@ class IFBlock(nn.Module):
     def __init__(self, in_planes, c=64):
         super(IFBlock, self).__init__()
         self.conv0 = nn.Sequential(
-            conv(in_planes, c 
-            conv(c 
+            conv(in_planes, c // 2, 3, 2, 1),
+            conv(c // 2, c, 3, 2, 1),
         )
         self.convblock = nn.Sequential(
             ResConv(c),

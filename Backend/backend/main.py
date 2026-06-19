@@ -1,12 +1,12 @@
 import argparse
 import sys
 import os
-from pathlib import Path  # ДОБАВЛЕНО: импорт pathlib
+from pathlib import Path  
 
-# Гарантируем, что Питон видит папку backend как корень для импортов
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Теперь импорт сработает идеально
+
 import src.constants as cs
 
 def main():
@@ -14,10 +14,10 @@ def main():
     parser.add_argument("task", choices=["rife", "clean", "depth", "bg"])
     args, remaining_args = parser.parse_known_args()
 
-    # =====================================================================
-    # ИНТЕРЦЕПТОР ПУТЕЙ (Внедрение pathlib)
-    # =====================================================================
-    # Перехватываем пути из remaining_args, чтобы нормализовать их до запуска воркеров
+    
+    
+    
+    
     path_sniffer = argparse.ArgumentParser(add_help=False)
     path_sniffer.add_argument("--input", type=str)
     path_sniffer.add_argument("--output", type=str)
@@ -25,12 +25,12 @@ def main():
 
     if path_args.input:
         input_path = Path(path_args.input).resolve()
-        # Жесткая проверка: если JS передал кривой путь или файл пропал — тушим процесс
+        
         if not input_path.exists():
             print(f"[CRITICAL ERROR] Source file not found at: {input_path}", file=sys.stderr)
             sys.exit(1)
         
-        # Перезаписываем нормализованный абсолютный путь обратно в remaining_args
+        
         if "--input" in remaining_args:
             idx = remaining_args.index("--input")
             if idx + 1 < len(remaining_args):
@@ -39,12 +39,12 @@ def main():
     if path_args.output:
         output_path = Path(path_args.output).resolve()
         
-        # Перезаписываем нормализованный абсолютный путь обратно в remaining_args
+        
         if "--output" in remaining_args:
             idx = remaining_args.index("--output")
             if idx + 1 < len(remaining_args):
                 remaining_args[idx + 1] = str(output_path)
-    # =====================================================================
+    
 
     match args.task:
         case "rife":

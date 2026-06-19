@@ -1,17 +1,17 @@
-# flake8: noqa E501
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from typing import List, Sequence, Tuple
 import torch
@@ -60,7 +60,7 @@ class DualDPT(nn.Module):
     ) -> None:
         super().__init__()
 
-        # -------------------- configuration --------------------
+        
         self.patch_size = patch_size
         self.activation = activation
         self.conf_activation = conf_activation
@@ -70,20 +70,20 @@ class DualDPT(nn.Module):
         self.aux_levels = aux_pyramid_levels
         self.aux_out1_conv_num = aux_out1_conv_num
 
-        # names ONLY come from config (no hard-coded strings elsewhere)
+        
         self.head_main, self.head_aux = head_names
 
-        # Always expect 4 scales; enforce intermediate idx = (0, 1, 2, 3)
+        
         self.intermediate_layer_idx: Tuple[int, int, int, int] = (0, 1, 2, 3)
 
-        # -------------------- token pre-norm + per-stage projection --------------------
+        
         self.norm = nn.LayerNorm(dim_in)
         self.projects = nn.ModuleList(
             [nn.Conv2d(dim_in, oc, kernel_size=1, stride=1, padding=0) for oc in out_channels]
         )
 
-        # -------------------- spatial re-sizers (align to common scale before fusion) --------------------
-        # design: stage strides (x4, x2, x1, /2) relative to patch grid to align to a common pivot scale
+        
+        
         self.resize_layers = nn.ModuleList(
             [
                 nn.ConvTranspose2d(
@@ -97,39 +97,39 @@ class DualDPT(nn.Module):
             ]
         )
 
-        # -------------------- scratch: stage adapters + fusion (main & aux are separate) --------------------
+        
         self.scratch = _make_scratch(list(out_channels), features, expand=False)
 
-        # Main fusion chain (independent)
+        
         self.scratch.refinenet1 = _make_fusion_block(features)
         self.scratch.refinenet2 = _make_fusion_block(features)
         self.scratch.refinenet3 = _make_fusion_block(features)
         self.scratch.refinenet4 = _make_fusion_block(features, has_residual=False)
 
-        # Primary head neck + head (independent)
+        
         head_features_1 = features
         head_features_2 = 32
         self.scratch.output_conv1 = nn.Conv2d(
-            head_features_1, head_features_1 
+            head_features_1, head_features_1 // 2, kernel_size=3, stride=1, padding=1
         )
         self.scratch.output_conv2 = nn.Sequential(
-            nn.Conv2d(head_features_1 
+            nn.Conv2d(head_features_1 // 2, head_features_2, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(head_features_2, output_dim, kernel_size=1, stride=1, padding=0),
         )
 
-        # Auxiliary fusion chain (completely separate; no sharing, i.e., "fusion_inplace=False")
+        
         self.scratch.refinenet1_aux = _make_fusion_block(features)
         self.scratch.refinenet2_aux = _make_fusion_block(features)
         self.scratch.refinenet3_aux = _make_fusion_block(features)
         self.scratch.refinenet4_aux = _make_fusion_block(features, has_residual=False)
 
-        # Aux pre-head per level (we will only *return final level*)
+        
         self.scratch.output_conv1_aux = nn.ModuleList(
             [self._make_aux_out1_block(head_features_1) for _ in range(self.aux_levels)]
         )
 
-        # Aux final projection per level
+        
         use_ln = True
         ln_seq = (
             [Permute((0, 2, 3, 1)), nn.LayerNorm(head_features_2), Permute((0, 3, 1, 2))]
@@ -140,7 +140,7 @@ class DualDPT(nn.Module):
             [
                 nn.Sequential(
                     nn.Conv2d(
-                        head_features_1 
+                        head_features_1 // 2, head_features_2, kernel_size=3, stride=1, padding=1
                     ),
                     *ln_seq,
                     nn.ReLU(inplace=True),
@@ -150,9 +150,9 @@ class DualDPT(nn.Module):
             ]
         )
 
-    # -------------------------------------------------------------------------
-    # Public forward (supports frame chunking for memory)
-    # -------------------------------------------------------------------------
+    
+    
+    
 
     def forward(
         self,
@@ -202,9 +202,9 @@ class DualDPT(nn.Module):
         out_dict = {k: v.view(B, S, *v.shape[1:]) for k, v in out_dict.items()}
         return Dict(out_dict)
 
-    # -------------------------------------------------------------------------
-    # Internal forward (single chunk)
-    # -------------------------------------------------------------------------
+    
+    
+    
 
     def _forward_impl(
         self,
@@ -214,23 +214,23 @@ class DualDPT(nn.Module):
         patch_start_idx: int,
     ) -> Dict[str, torch.Tensor]:
         B, _, C = feats[0].shape
-        ph, pw = H 
+        ph, pw = H // self.patch_size, W // self.patch_size
         resized_feats = []
         for stage_idx, take_idx in enumerate(self.intermediate_layer_idx):
             x = feats[take_idx][:, patch_start_idx:]
             x = self.norm(x)
-            x = x.permute(0, 2, 1).reshape(B, C, ph, pw)  # [B*S, C, ph, pw]
+            x = x.permute(0, 2, 1).reshape(B, C, ph, pw)  
 
             x = self.projects[stage_idx](x)
             if self.pos_embed:
                 x = self._add_pos_embed(x, W, H)
-            x = self.resize_layers[stage_idx](x)  # align scales
+            x = self.resize_layers[stage_idx](x)  
             resized_feats.append(x)
 
-        # 2) Fuse pyramid (main & aux are completely independent)
+        
         fused_main, fused_aux_pyr = self._fuse(resized_feats)
 
-        # 3) Upsample to target resolution and (optional) add pos-embed again
+        
         h_out = int(ph * self.patch_size / self.down_ratio)
         w_out = int(pw * self.patch_size / self.down_ratio)
 
@@ -240,19 +240,19 @@ class DualDPT(nn.Module):
         if self.pos_embed:
             fused_main = self._add_pos_embed(fused_main, W, H)
 
-        # Primary head: conv1 -> conv2 -> activate
-        # fused_main = self.scratch.output_conv1(fused_main)
+        
+        
         main_logits = self.scratch.output_conv2(fused_main)
         fmap = main_logits.permute(0, 2, 3, 1)
         main_pred = self._apply_activation_single(fmap[..., :-1], self.activation)
         main_conf = self._apply_activation_single(fmap[..., -1], self.conf_activation)
 
-        # Auxiliary head (multi-level inside) -> only last level returned (after activation)
+        
         last_aux = fused_aux_pyr[-1]
         if self.pos_embed:
             last_aux = self._add_pos_embed(last_aux, W, H)
-        # neck (per-level pre-conv) then final projection (only for last level)
-        # last_aux = self.scratch.output_conv1_aux[-1](last_aux)
+        
+        
         last_aux_logits = self.scratch.output_conv2_aux[-1](last_aux)
         fmap_last = last_aux_logits.permute(0, 2, 3, 1)
         aux_pred = self._apply_activation_single(fmap_last[..., :-1], "linear")
@@ -264,9 +264,9 @@ class DualDPT(nn.Module):
             f"{self.head_aux}_conf": aux_conf,
         }
 
-    # -------------------------------------------------------------------------
-    # Subroutines
-    # -------------------------------------------------------------------------
+    
+    
+    
 
     def _fuse(self, feats: List[torch.Tensor]) -> Tuple[torch.Tensor, List[torch.Tensor]]:
         """
@@ -282,26 +282,26 @@ class DualDPT(nn.Module):
         l3_rn = self.scratch.layer3_rn(l3)
         l4_rn = self.scratch.layer4_rn(l4)
 
-        # level 4 -> 3
+        
         out = self.scratch.refinenet4(l4_rn, size=l3_rn.shape[2:])
         aux_out = self.scratch.refinenet4_aux(l4_rn, size=l3_rn.shape[2:])
         aux_list: List[torch.Tensor] = []
         if self.aux_levels >= 4:
             aux_list.append(aux_out)
 
-        # level 3 -> 2
+        
         out = self.scratch.refinenet3(out, l3_rn, size=l2_rn.shape[2:])
         aux_out = self.scratch.refinenet3_aux(aux_out, l3_rn, size=l2_rn.shape[2:])
         if self.aux_levels >= 3:
             aux_list.append(aux_out)
 
-        # level 2 -> 1
+        
         out = self.scratch.refinenet2(out, l2_rn, size=l1_rn.shape[2:])
         aux_out = self.scratch.refinenet2_aux(aux_out, l2_rn, size=l1_rn.shape[2:])
         if self.aux_levels >= 2:
             aux_list.append(aux_out)
 
-        # level 1 (final)
+        
         out = self.scratch.refinenet1(out, l1_rn)
         aux_out = self.scratch.refinenet1_aux(aux_out, l1_rn)
         aux_list.append(aux_out)
@@ -323,20 +323,20 @@ class DualDPT(nn.Module):
         """Factory for the aux pre-head stack before the final 1x1 projection."""
         if self.aux_out1_conv_num == 5:
             return nn.Sequential(
-                nn.Conv2d(in_ch, in_ch 
-                nn.Conv2d(in_ch 
-                nn.Conv2d(in_ch, in_ch 
-                nn.Conv2d(in_ch 
-                nn.Conv2d(in_ch, in_ch 
+                nn.Conv2d(in_ch, in_ch // 2, 3, 1, 1),
+                nn.Conv2d(in_ch // 2, in_ch, 3, 1, 1),
+                nn.Conv2d(in_ch, in_ch // 2, 3, 1, 1),
+                nn.Conv2d(in_ch // 2, in_ch, 3, 1, 1),
+                nn.Conv2d(in_ch, in_ch // 2, 3, 1, 1),
             )
         if self.aux_out1_conv_num == 3:
             return nn.Sequential(
-                nn.Conv2d(in_ch, in_ch 
-                nn.Conv2d(in_ch 
-                nn.Conv2d(in_ch, in_ch 
+                nn.Conv2d(in_ch, in_ch // 2, 3, 1, 1),
+                nn.Conv2d(in_ch // 2, in_ch, 3, 1, 1),
+                nn.Conv2d(in_ch, in_ch // 2, 3, 1, 1),
             )
         if self.aux_out1_conv_num == 1:
-            return nn.Sequential(nn.Conv2d(in_ch, in_ch 
+            return nn.Sequential(nn.Conv2d(in_ch, in_ch // 2, 3, 1, 1))
         raise ValueError(f"aux_out1_conv_num {self.aux_out1_conv_num} not supported")
 
     def _apply_activation_single(
@@ -361,129 +361,129 @@ class DualDPT(nn.Module):
             return torch.nn.functional.softplus(x)
         if act == "tanh":
             return torch.tanh(x)
-        # Default linear
+        
         return x
 
 
-# # -----------------------------------------------------------------------------
-# # Building blocks (tidy)
-# # -----------------------------------------------------------------------------
 
 
-# def _make_fusion_block(
-#     features: int,
-#     size: Tuple[int, int] = None,
-#     has_residual: bool = True,
-#     groups: int = 1,
-#     inplace: bool = False,  # <- activation uses inplace=True by default; not related to "fusion_inplace"
-# ) -> nn.Module:
-#     return FeatureFusionBlock(
-#         features=features,
-#         activation=nn.ReLU(inplace=inplace),
-#         deconv=False,
-#         bn=False,
-#         expand=False,
-#         align_corners=True,
-#         size=size,
-#         has_residual=has_residual,
-#         groups=groups,
-#     )
 
 
-# def _make_scratch(
-#     in_shape: List[int], out_shape: int, groups: int = 1, expand: bool = False
-# ) -> nn.Module:
-#     scratch = nn.Module()
-#     # optionally expand widths by stage
-#     c1 = out_shape
-#     c2 = out_shape * (2 if expand else 1)
-#     c3 = out_shape * (4 if expand else 1)
-#     c4 = out_shape * (8 if expand else 1)
-
-#     scratch.layer1_rn = nn.Conv2d(in_shape[0], c1, 3, 1, 1, bias=False, groups=groups)
-#     scratch.layer2_rn = nn.Conv2d(in_shape[1], c2, 3, 1, 1, bias=False, groups=groups)
-#     scratch.layer3_rn = nn.Conv2d(in_shape[2], c3, 3, 1, 1, bias=False, groups=groups)
-#     scratch.layer4_rn = nn.Conv2d(in_shape[3], c4, 3, 1, 1, bias=False, groups=groups)
-#     return scratch
 
 
-# class ResidualConvUnit(nn.Module):
-#     """Lightweight residual conv block used within fusion."""
-
-#     def __init__(self, features: int, activation: nn.Module, bn: bool, groups: int = 1) -> None:
-#         super().__init__()
-#         self.bn = bn
-#         self.groups = groups
-#         self.conv1 = nn.Conv2d(features, features, 3, 1, 1, bias=True, groups=groups)
-#         self.conv2 = nn.Conv2d(features, features, 3, 1, 1, bias=True, groups=groups)
-#         self.norm1 = None
-#         self.norm2 = None
-#         self.activation = activation
-#         self.skip_add = nn.quantized.FloatFunctional()
-
-#     def forward(self, x: torch.Tensor) -> torch.Tensor:  # type: ignore[override]
-#         out = self.activation(x)
-#         out = self.conv1(out)
-#         if self.norm1 is not None:
-#             out = self.norm1(out)
-
-#         out = self.activation(out)
-#         out = self.conv2(out)
-#         if self.norm2 is not None:
-#             out = self.norm2(out)
-
-#         return self.skip_add.add(out, x)
 
 
-# class FeatureFusionBlock(nn.Module):
-#     """Top-down fusion block: (optional) residual merge + upsample + 1x1 shrink."""
 
-#     def __init__(
-#         self,
-#         features: int,
-#         activation: nn.Module,
-#         deconv: bool = False,
-#         bn: bool = False,
-#         expand: bool = False,
-#         align_corners: bool = True,
-#         size: Tuple[int, int] = None,
-#         has_residual: bool = True,
-#         groups: int = 1,
-#     ) -> None:
-#         super().__init__()
-#         self.align_corners = align_corners
-#         self.size = size
-#         self.has_residual = has_residual
 
-#         self.resConfUnit1 = (
-#             ResidualConvUnit(features, activation, bn, groups=groups) if has_residual else None
-#         )
-#         self.resConfUnit2 = ResidualConvUnit(features, activation, bn, groups=groups)
 
-#         out_features = (features 
-#         self.out_conv = nn.Conv2d(features, out_features, 1, 1, 0, bias=True, groups=groups)
-#         self.skip_add = nn.quantized.FloatFunctional()
 
-#     def forward(self, *xs: torch.Tensor, size: Tuple[int, int] = None) -> torch.Tensor:  # type: ignore[override]
-#         """
-#         xs:
-#           - xs[0]: top input
-#           - xs[1]: (optional) lateral (to be added with residual)
-#         """
-#         y = xs[0]
-#         if self.has_residual and len(xs) > 1 and self.resConfUnit1 is not None:
-#             y = self.skip_add.add(y, self.resConfUnit1(xs[1]))
 
-#         y = self.resConfUnit2(y)
 
-#         # upsample
-#         if (size is None) and (self.size is None):
-#             up_kwargs = {"scale_factor": 2}
-#         elif size is None:
-#             up_kwargs = {"size": self.size}
-#         else:
-#             up_kwargs = {"size": size}
 
-#         y = custom_interpolate(y, **up_kwargs, mode="bilinear", align_corners=self.align_corners)
-#         y = self.out_conv(y)
-#         return y
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,16 +1,16 @@
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import asyncio
 import os
@@ -26,7 +26,7 @@ def async_call_func(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         loop = asyncio.get_event_loop()
-        # Use run_in_executor to run the blocking function in a separate thread
+        
         return await loop.run_in_executor(None, func, *args, **kwargs)
 
     return wrapper
@@ -71,10 +71,10 @@ def parallel_execution(
     desc=None,
     **kwargs,
 ):
-    # Partially copy from EasyVolumetricVideo (parallel_execution)
-    # NOTE: we expect first arg / or kwargs to be distributed
-    # NOTE: print_progress arg is reserved.
-    # `*args` packs all positional arguments passed to the function into a tuple
+    
+    
+    
+    
     args = list(args)
 
     def get_length(args: List, kwargs: Dict):
@@ -90,7 +90,7 @@ def parallel_execution(
         action_args = [
             (arg[i] if isinstance(arg, list) and len(arg) == length else arg) for arg in args
         ]
-        # TODO: Support all types of iterable
+        
         action_kwargs = {
             key: (
                 kwargs[key][i]
@@ -102,10 +102,10 @@ def parallel_execution(
         return action_args, action_kwargs
 
     if not sequential:
-        # Create ThreadPool
+        
         pool = ThreadPool(processes=num_processes)
 
-        # Spawn threads
+        
         results = []
         asyncs = []
         length = get_length(args, kwargs)
@@ -114,10 +114,10 @@ def parallel_execution(
             async_result = pool.apply_async(action, action_args, action_kwargs)
             asyncs.append(async_result)
 
-        # Join threads and get return values
+        
         if not async_return:
             for async_result in tqdm(asyncs, desc=desc, disable=not print_progress):
-                results.append(async_result.get())  # will sync the corresponding thread
+                results.append(async_result.get())  
             pool.close()
             pool.join()
             return results

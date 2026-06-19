@@ -9,7 +9,7 @@ import logging
 import sys
 import os
 
-# ANSI escape codes - works on modern terminals (Windows 10+, Linux, macOS)
+
 _RESET = "\033[0m"
 _BOLD = "\033[1m"
 
@@ -23,7 +23,7 @@ _COLORS = {
     "light_blue": "\033[94m",
 }
 
-# Detect whether the output supports ANSI colors
+
 def _supportsColor():
     if os.environ.get("NO_COLOR"):
         return False
@@ -32,7 +32,7 @@ def _supportsColor():
     if not hasattr(sys.stdout, "isatty") or not sys.stdout.isatty():
         return False
     if sys.platform == "win32":
-        # Windows 10 build 14393+ supports ANSI natively
+        
         try:
             ver = sys.getwindowsversion()
             return ver.major >= 10 and ver.build >= 14393

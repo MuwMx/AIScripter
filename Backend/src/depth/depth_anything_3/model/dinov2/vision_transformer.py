@@ -1,11 +1,11 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-#
-# This source code is licensed under the Apache License, Version 2.0
-# found in the LICENSE file in the root directory of this source tree.
 
-# References:
-#   https://github.com/facebookresearch/dino/blob/main/vision_transformer.py
-#   https://github.com/rwightman/pytorch-image-models/tree/master/timm/models/vision_transformer.py
+
+
+
+
+
+
+
 
 import math
 from typing import Callable, List, Sequence, Tuple, Union
@@ -17,9 +17,9 @@ from einops import rearrange
 
 from depth_anything_3.utils.logger import logger
 
-from .layers import LayerScale  # noqa: F401
-from .layers import Mlp  # noqa: F401
-from .layers import (  # noqa: F401
+from .layers import LayerScale  
+from .layers import Mlp  
+from .layers import (  
     Block,
     PatchEmbed,
     PositionGetter,
@@ -34,7 +34,7 @@ from depth_anything_3.model.reference_view_selector import (
 )
 from depth_anything_3.utils.constants import THRESH_FOR_REF_SELECTION
 
-# logger = logging.getLogger("dinov2")
+
 
 
 def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
@@ -44,17 +44,17 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
     out: (M, D)
     """
     assert embed_dim % 2 == 0
-    omega = np.arange(embed_dim 
+    omega = np.arange(embed_dim // 2, dtype=float)
     omega /= embed_dim / 2.0
-    omega = 1.0 / 10000**omega  # (D/2,)
+    omega = 1.0 / 10000**omega  
 
-    pos = pos.reshape(-1)  # (M,)
-    out = np.einsum("m,d->md", pos, omega)  # (M, D/2), outer product
+    pos = pos.reshape(-1)  
+    out = np.einsum("m,d->md", pos, omega)  
 
-    emb_sin = np.sin(out)  # (M, D/2)
-    emb_cos = np.cos(out)  # (M, D/2)
+    emb_sin = np.sin(out)  
+    emb_cos = np.cos(out)  
 
-    emb = np.concatenate([emb_sin, emb_cos], axis=1)  # (M, D)
+    emb = np.concatenate([emb_sin, emb_cos], axis=1)  
     return emb
 
 
@@ -95,7 +95,7 @@ class DinoVisionTransformer(nn.Module):
         proj_bias=True,
         drop_path_rate=0.0,
         drop_path_uniform=False,
-        init_values=1.0,  # for layerscale: None or 0 => no layerscale
+        init_values=1.0,  
         embed_layer=PatchEmbed,
         act_layer=nn.GELU,
         block_fn=Block,
@@ -140,7 +140,7 @@ class DinoVisionTransformer(nn.Module):
         self.patch_start_idx = 1
         norm_layer = nn.LayerNorm
         self.num_features = self.embed_dim = (
-            embed_dim  # num_features for consistency with other models
+            embed_dim  
         )
         self.alt_start = alt_start
         self.qknorm_start = qknorm_start
@@ -174,7 +174,7 @@ class DinoVisionTransformer(nn.Module):
         else:
             dpr = [
                 x.item() for x in torch.linspace(0, drop_path_rate, depth)
-            ]  # stochastic depth decay rule
+            ]  
         if ffn_layer == "mlp":
             logger.info("using MLP layer as FFN")
             ffn_layer = Mlp
@@ -227,21 +227,21 @@ class DinoVisionTransformer(nn.Module):
         class_pos_embed = pos_embed[:, 0]
         patch_pos_embed = pos_embed[:, 1:]
         dim = x.shape[-1]
-        w0 = w 
-        h0 = h 
-        M = int(math.sqrt(N))  # Recover the number of patches in each dimension
+        w0 = w // self.patch_size
+        h0 = h // self.patch_size
+        M = int(math.sqrt(N))  
         assert N == M * M
         kwargs = {}
         if self.interpolate_offset:
-            # Historical kludge: add a small number to avoid floating point error in the
-            # interpolation, see https://github.com/facebookresearch/dino/issues/8
-            # Note: still needed for backward-compatibility, the underlying operators are using
-            # both output size and scale factors
+            
+            
+            
+            
             sx = float(w0 + self.interpolate_offset) / M
             sy = float(h0 + self.interpolate_offset) / M
             kwargs["scale_factor"] = (sx, sy)
         else:
-            # Simply specify an output size instead of a scale factor
+            
             kwargs["size"] = (w0, h0)
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed.reshape(1, M, M, dim).permute(0, 3, 1, 2),
@@ -284,7 +284,7 @@ class DinoVisionTransformer(nn.Module):
         pos_nodiff = None
         if self.rope is not None:
             pos = self.position_getter(
-                B * S, H 
+                B * S, H // self.patch_size, W // self.patch_size, device=device
             )
             pos = rearrange(pos, "(b s) n c -> b s n c", b=B)
             pos_nodiff = torch.zeros_like(pos).to(pos.dtype)
@@ -312,11 +312,11 @@ class DinoVisionTransformer(nn.Module):
                 l_pos = pos
 
             if self.alt_start != -1 and (i == self.alt_start - 1) and x.shape[1] >= THRESH_FOR_REF_SELECTION and kwargs.get("cam_token", None) is None:
-                # Select reference view using configured strategy
+                
                 strategy = kwargs.get("ref_view_strategy", "saddle_balanced")
                 logger.info(f"Selecting reference view using strategy: {strategy}")
                 b_idx = select_reference_view(x, strategy=strategy)
-                # Reorder views to place reference view first
+                
                 x = reorder_by_reference(x, b_idx)
                 local_x = reorder_by_reference(local_x, b_idx)
 
@@ -340,7 +340,7 @@ class DinoVisionTransformer(nn.Module):
 
             if i in blocks_to_take:
                 out_x = torch.cat([local_x, x], dim=-1) if self.cat_token else x
-                # Restore original view order if reordering was applied
+                
                 if x.shape[1] >= THRESH_FOR_REF_SELECTION and self.alt_start != -1 and 'b_idx' in locals():
                     out_x = restore_original_order(out_x, b_idx)
                 output.append((out_x[:, :, 0], out_x))
@@ -372,7 +372,7 @@ class DinoVisionTransformer(nn.Module):
     def get_intermediate_layers(
         self,
         x: torch.Tensor,
-        n: Union[int, Sequence] = 1,  # Layers or n last layers to take
+        n: Union[int, Sequence] = 1,  
         export_feat_layers: List[int] = [],
         **kwargs,
     ) -> Tuple[Union[torch.Tensor, Tuple[torch.Tensor]]]:
@@ -405,7 +405,7 @@ def vit_small(patch_size=16, num_register_tokens=0, depth=12, **kwargs):
         depth=depth,
         num_heads=6,
         mlp_ratio=4,
-        # block_fn=partial(Block, attn_class=MemEffAttention),
+        
         num_register_tokens=num_register_tokens,
         **kwargs,
     )
@@ -419,7 +419,7 @@ def vit_base(patch_size=16, num_register_tokens=0, depth=12, **kwargs):
         depth=depth,
         num_heads=12,
         mlp_ratio=4,
-        # block_fn=partial(Block, attn_class=MemEffAttention),
+        
         num_register_tokens=num_register_tokens,
         **kwargs,
     )
@@ -433,7 +433,7 @@ def vit_large(patch_size=16, num_register_tokens=0, depth=24, **kwargs):
         depth=depth,
         num_heads=16,
         mlp_ratio=4,
-        # block_fn=partial(Block, attn_class=MemEffAttention),
+        
         num_register_tokens=num_register_tokens,
         **kwargs,
     )

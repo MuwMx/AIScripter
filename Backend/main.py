@@ -24,9 +24,9 @@ Home: https://github.com/NevermindNilas/TheAnimeScripter
 
 import os
 
-# Disable Intel Fortran's console ctrl handler before MKL/numpy/torch load.
-# Without this, Ctrl+C triggers `forrtl: error (200)` and freezes the terminal
-# instead of raising KeyboardInterrupt.
+
+
+
 os.environ.setdefault("FOR_DISABLE_CONSOLE_CTRL_HANDLER", "1")
 
 import sys
@@ -84,7 +84,7 @@ class VideoProcessor:
         Args:
             args: Parsed command line arguments
         """
-        # Core processing flags
+        
         self.interpolate: bool = args.interpolate
         self.upscale: bool = args.upscale
         self.restore: bool = args.restore
@@ -96,7 +96,7 @@ class VideoProcessor:
         self.objDetect: bool = args.obj_detect
         self.stabilize: bool = args.stabilize
 
-        # Processing parameters
+        
         self.interpolateFactor: int = args.interpolate_factor
         self.interpolateMethod: str = args.interpolate_method
         self.upscaleFactor: int = args.upscale_factor
@@ -109,7 +109,7 @@ class VideoProcessor:
         self.objDetectMethod: str = args.obj_detect_method
         self.objDetectDisableAnnotations: bool = args.obj_detect_disable_annotations
 
-        # Quality and performance settings
+        
         self.half: bool = args.half
         self.ensemble: bool = args.ensemble
         self.forceStatic: bool = args.static
@@ -118,7 +118,7 @@ class VideoProcessor:
         self.compileMode: str = args.compile_mode
         self.decodeMethod: str = args.decode_method
 
-        # Video processing settings
+        
         self.inpoint: float = args.inpoint
         self.outpoint: float = args.outpoint
         self.resize: bool = args.resize
@@ -129,7 +129,7 @@ class VideoProcessor:
         self.outputScaleWidth: int = args.output_scale_width
         self.outputScaleHeight: int = args.output_scale_height
 
-        # Enhancement settings
+        
         self.sharpenSens: float = args.sharpen_sens
         self.autoclipSens: float = args.autoclip_sens
         self.autoclipMethod: str = args.autoclip_method
@@ -146,7 +146,7 @@ class VideoProcessor:
 
         self.demo: bool = getattr(args, "demo", False)
 
-        # Utility settings
+        
         self.customModel: str = args.custom_model
         self.benchmark: bool = args.benchmark
         self.preview: bool = args.preview
@@ -161,7 +161,7 @@ class VideoProcessor:
         Args:
             args: Command line arguments containing inpoint and outpoint
         """
-        # Lazy import to speed up startup for non-processing paths
+        
         from src.utils.getVideoMetadata import getVideoMetadata
 
         videoMetadata = getVideoMetadata(
@@ -257,9 +257,9 @@ class VideoProcessor:
         Args:
             frame: Input video frame tensor
         """
-        #if self.dedup and self.dedup_process(frame):
-        #    self.dedupCount += 1
-        #    return
+        
+        
+        
 
         if self.restore:
             frame = self.restore_process(frame)
@@ -269,8 +269,8 @@ class VideoProcessor:
                 currentIDX = self.frameCounter
                 nextIDX = currentIDX + 1
 
-                outputStart = (currentIDX * self.factorNum) 
-                outputEnd = (nextIDX * self.factorNum) 
+                outputStart = (currentIDX * self.factorNum) // self.factorDen
+                outputEnd = (nextIDX * self.factorNum) // self.factorDen
 
                 self.framesToInsert = outputEnd - outputStart - 1
 
@@ -434,7 +434,7 @@ class VideoProcessor:
         self.ProgressBarLogic = ProgressBarLogic
 
         try:
-            # Initialize AI models and get processing functions
+            
             from src.initializeModels import initializeModels
 
             progressState.update({"status": "Initializing AI models..."})
@@ -762,8 +762,8 @@ def main():
 
     except KeyboardInterrupt:
         logWarning("Process interrupted by user")
-        # Force-exit: bypass blocked thread joins (TRT inference, ffmpeg subprocess
-        # wait, nelux decoder) which sys.exit() would hang on.
+        
+        
         os._exit(130)
     except Exception as e:
         logError(f"An unexpected error occurred: {str(e)}")

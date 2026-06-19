@@ -1,16 +1,16 @@
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 """Minimal input processor for the stripped Depth Anything 3 runtime."""
 
@@ -51,9 +51,9 @@ class InputProcessor:
     def __init__(self):
         pass
 
-    # -----------------------------
-    # Public API
-    # -----------------------------
+    
+    
+    
     def __call__(
         self,
         image: list[np.ndarray | Image.Image | str],
@@ -105,9 +105,9 @@ class InputProcessor:
         )
         return (batch_tensor, out_exts, out_ixts)
 
-    # -----------------------------
-    # __call__ helpers
-    # -----------------------------
+    
+    
+    
     def _resolve_sequential(self, sequential: bool | None, num_workers: int) -> bool:
         return (num_workers <= 1) if sequential is None else sequential
 
@@ -156,8 +156,8 @@ class InputProcessor:
         center_crop = T.CenterCrop((min_h, min_w))
         new_imgs, new_sizes, new_ixts = [], [], []
         for img_t, (H, W), K in zip(processed_images, out_sizes, out_intrinsics):
-            crop_top = max(0, (H - min_h) 
-            crop_left = max(0, (W - min_w) 
+            crop_top = max(0, (H - min_h) // 2)
+            crop_left = max(0, (W - min_w) // 2)
             new_imgs.append(center_crop(img_t))
             new_sizes.append((min_h, min_w))
             if K is None:
@@ -172,9 +172,9 @@ class InputProcessor:
     def _stack_batch(self, processed_images: list[torch.Tensor]) -> torch.Tensor:
         return torch.stack(processed_images)
 
-    # -----------------------------
-    # Per-item worker
-    # -----------------------------
+    
+    
+    
     def _process_one(
         self,
         img: np.ndarray | Image.Image | str,
@@ -184,16 +184,16 @@ class InputProcessor:
         process_res: int,
         process_res_method: str,
     ) -> tuple[torch.Tensor, tuple[int, int], np.ndarray | None, np.ndarray | None]:
-        # Load & remember original size
+        
         pil_img = self._load_image(img)
         orig_w, orig_h = pil_img.size
 
-        # Boundary resize
+        
         pil_img = self._resize_image(pil_img, process_res, process_res_method)
         w, h = pil_img.size
         intrinsic = self._resize_ixt(intrinsic, orig_w, orig_h, w, h)
 
-        # Enforce divisibility by PATCH_SIZE
+        
         if process_res_method.endswith("resize"):
             pil_img = self._make_divisible_by_resize(pil_img, self.PATCH_SIZE)
             new_w, new_h = pil_img.size
@@ -207,17 +207,17 @@ class InputProcessor:
         else:
             raise ValueError(f"Unsupported process_res_method: {process_res_method}")
 
-        # Convert to tensor & normalize
+        
         img_tensor = self._normalize_image(pil_img)
         _, H, W = img_tensor.shape
         assert (W, H) == (w, h), "Tensor size mismatch with PIL image size after processing."
 
-        # Return: (img_tensor, (H, W), intrinsic, extrinsic)
+        
         return img_tensor, (H, W), intrinsic, extrinsic
 
-    # -----------------------------
-    # Intrinsics transforms
-    # -----------------------------
+    
+    
+    
     def _resize_ixt(
         self,
         intrinsic: np.ndarray | None,
@@ -229,7 +229,7 @@ class InputProcessor:
         if intrinsic is None:
             return None
         K = intrinsic.copy()
-        # scale fx, cx by w ratio; fy, cy by h ratio
+        
         K[:1] *= w / float(orig_w)
         K[1:2] *= h / float(orig_h)
         return K
@@ -245,20 +245,20 @@ class InputProcessor:
         if intrinsic is None:
             return None
         K = intrinsic.copy()
-        crop_h = (orig_h - h) 
-        crop_w = (orig_w - w) 
+        crop_h = (orig_h - h) // 2
+        crop_w = (orig_w - w) // 2
         K[0, 2] -= crop_w
         K[1, 2] -= crop_h
         return K
 
-    # -----------------------------
-    # I/O & normalization
-    # -----------------------------
+    
+    
+    
     def _load_image(self, img: np.ndarray | Image.Image | str) -> Image.Image:
         if isinstance(img, str):
             return Image.open(img).convert("RGB")
         elif isinstance(img, np.ndarray):
-            # Assume HxWxC uint8/RGB
+            
             return Image.fromarray(img).convert("RGB")
         elif isinstance(img, Image.Image):
             return img.convert("RGB")
@@ -269,9 +269,9 @@ class InputProcessor:
         img_tensor = T.ToTensor()(img)
         return self.NORMALIZE(img_tensor)
 
-    # -----------------------------
-    # Boundary resizing
-    # -----------------------------
+    
+    
+    
     def _resize_image(self, img: Image.Image, target_size: int, method: str) -> Image.Image:
         if method in ("upper_bound_resize", "upper_bound_crop"):
             return self._resize_longest_side(img, target_size)
@@ -304,21 +304,21 @@ class InputProcessor:
         arr = cv2.resize(np.asarray(img), (new_w, new_h), interpolation=interpolation)
         return Image.fromarray(arr)
 
-    # -----------------------------
-    # Make divisible by PATCH_SIZE
-    # -----------------------------
+    
+    
+    
     def _make_divisible_by_crop(self, img: Image.Image, patch: int) -> Image.Image:
         """
         Floor each dimension to the nearest multiple of PATCH_SIZE via center crop.
         Example: 504x377 -> 504x364
         """
         w, h = img.size
-        new_w = (w 
-        new_h = (h 
+        new_w = (w // patch) * patch
+        new_h = (h // patch) * patch
         if new_w == w and new_h == h:
             return img
-        left = (w - new_w) 
-        top = (h - new_h) 
+        left = (w - new_w) // 2
+        top = (h - new_h) // 2
         return img.crop((left, top, left + new_w, top + new_h))
 
     def _make_divisible_by_resize(self, img: Image.Image, patch: int) -> Image.Image:
@@ -328,7 +328,7 @@ class InputProcessor:
         w, h = img.size
 
         def nearest_multiple(x: int, p: int) -> int:
-            down = (x 
+            down = (x // p) * p
             up = down + p
             return up if abs(up - x) <= abs(x - down) else down
 
@@ -342,13 +342,13 @@ class InputProcessor:
         return Image.fromarray(arr)
 
 
-# Backward compatibility alias
+
 InputAdapter = InputProcessor
 
 
-# ===========================
-# Minimal test runner (parallel execution)
-# ===========================
+
+
+
 if __name__ == "__main__":
     """
     Minimal test suite:
@@ -383,7 +383,7 @@ if __name__ == "__main__":
     process_res = 504
     methods = ["upper_bound_resize", "upper_bound_crop", "lower_bound_resize", "lower_bound_crop"]
 
-    # Example sizes (two orientations)
+    
     small_sizes = [(680, 1208), (1208, 680)]
     large_sizes = [(1208, 680), (680, 1208)]
 
@@ -398,7 +398,7 @@ if __name__ == "__main__":
             img = Image.new("RGB", (w, h), color=(123, 222, 100))
             batch_imgs = [img, img]
 
-            # intrinsics / extrinsics examples
+            
             Ks_in = [make_K(w, h), make_K(w, h)]
             Es_in = [np.eye(4, dtype=np.float32), np.eye(4, dtype=np.float32)]
 
@@ -409,12 +409,12 @@ if __name__ == "__main__":
                     process_res_method=m,
                     num_workers=8,
                     print_progress=False,
-                    intrinsics=Ks_in,  # test with non-None
+                    intrinsics=Ks_in,  
                     extrinsics=Es_in,
                 )
                 show_result(f"{suite_name} size=({w},{h}) | {m}", tensor, Ks_in, Ks_out)
 
-            # Also test None path
+            
             tensor2, Es_out2, Ks_out2 = proc(
                 image=batch_imgs,
                 process_res=process_res,
@@ -433,7 +433,7 @@ if __name__ == "__main__":
     run_suite("SMALL", small_sizes)
     run_suite("LARGE", large_sizes)
 
-    # Extra sanity for 504x376
+    
     print("\n===== EXTRA sanity for 504x376 =====")
     img_example = Image.new("RGB", (504, 376), color=(10, 20, 30))
     Ks_in_extra = [make_K(504, 376, fx=900.0, fy=900.0), make_K(504, 376, fx=900.0, fy=900.0)]

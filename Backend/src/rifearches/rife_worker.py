@@ -2,25 +2,25 @@ import os
 import sys
 import argparse
 import subprocess
-import urllib.parse  # Добавлено для лечения путей от %20 и URL-мусора
+import urllib.parse  
 import cv2
 import numpy as np
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
-# =====================================================================
-# ЖЕЛЕЗОБЕТОННАЯ МАРШРУТИЗАЦИЯ ПУТЕЙ (Под твою реальную структуру)
-# =====================================================================
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__)) # ...\src\rifearches
-SRC_DIR = os.path.dirname(CURRENT_DIR)                   # ...\src
-ROOT_DIR = os.path.dirname(SRC_DIR)                      # ...\MyScripterAE
+
+
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__)) 
+SRC_DIR = os.path.dirname(CURRENT_DIR)                   
+ROOT_DIR = os.path.dirname(SRC_DIR)                      
 
 FFMPEG_EXE = os.path.join(ROOT_DIR, "ffmpeg_shared", "ffmpeg.exe")
 WEIGHTS_DIR = os.path.join(ROOT_DIR, "weights")
 RIFE_DIR = os.path.join(WEIGHTS_DIR, "rife4.6")
 
-# Пытаемся найти веса
+
 RIFE_WEIGHT_PATH = None
 if os.path.exists(os.path.join(RIFE_DIR, "flownet.pkl")):
     RIFE_WEIGHT_PATH = os.path.join(RIFE_DIR, "flownet.pkl")
@@ -28,9 +28,9 @@ elif os.path.exists(os.path.join(RIFE_DIR, "rife46.pth")):
     RIFE_WEIGHT_PATH = os.path.join(RIFE_DIR, "rife46.pth")
 
 
-# =====================================================================
-# 1. ОПТИМИЗИРОВАННЫЙ WARP (С кэшированием сетки из TAS)
-# =====================================================================
+
+
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 tenGrid = {}
 tenFlowDiv = {}
@@ -69,13 +69,13 @@ import src.rifearches.IFNet_rife46 as rife_module
 rife_module.warp = warp
 from src.rifearches.IFNet_rife46 import IFNet
 
-# =====================================================================
-# 2. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (Паддинг)
-# =====================================================================
+
+
+
 def pad_image(img_tensor, multiplier=32):
     h, w = img_tensor.shape[2], img_tensor.shape[3]
-    pad_h = ((h - 1) 
-    pad_w = ((w - 1) 
+    pad_h = ((h - 1) // multiplier + 1) * multiplier - h
+    pad_w = ((w - 1) // multiplier + 1) * multiplier - w
     if pad_h == 0 and pad_w == 0:
         return img_tensor, (0, 0, 0, 0)
     padding = (0, pad_w, 0, pad_h)
@@ -88,15 +88,15 @@ def unpad_image(img_tensor, padding):
     h, w = img_tensor.shape[2], img_tensor.shape[3]
     return img_tensor[:, :, :h - pad_h, :w - pad_w]
 
-# =====================================================================
-# 3. КЛАСС ВОРКЕРА RIFE
-# =====================================================================
+
+
+
 class RifeWorker:
     def __init__(self):
-        self.device = device  # Фикс: привязываем глобальный девайс к классу
+        self.device = device  
         print("[RIFE] Initializing RIFE 4.6 model (CUDA fp16)...")
 
-        # Фикс: добавлено условие проверки, чтобы скрипт не вылетал безусловно
+        
         if RIFE_WEIGHT_PATH is None:
             print(f"\n[CRITICAL ERROR] Weight file not found!")
             print(f"Script looked for directory: {RIFE_DIR}")
@@ -123,11 +123,11 @@ class RifeWorker:
         return pad_image(tensor)
 
     def process(self, input_path, output_path, scale):
-        # 1. ЛЕЧИМ ПУТЬ ОТ URL-МУСОРА
+        
         input_path = urllib.parse.unquote(input_path)
         input_path = os.path.normpath(input_path)
         
-        # 2. ЖЕСТКАЯ ПРОВЕРКА СУЩЕСТВОВАНИЯ
+        
         if not os.path.exists(input_path):
             print(f"[CRITICAL ERROR] Source file not found: {input_path}")
             return
@@ -177,20 +177,20 @@ class RifeWorker:
                 
                 I1, _ = self._prepare_frame(raw_frame, width, height)
 
-                # Генерируем промежуточные кадры
+                
                 for t in timesteps:
                     t_tensor = torch.full((1, 1, I0.shape[2], I0.shape[3]), t, dtype=torch.float16, device=self.device)
                     
-                    # Инференс (вызов модели)
+                    
                     mid = self.model(I0, I1, t_tensor)
                     
                     mid = unpad_image(mid, padding)
                     mid_bytes = (mid[0].permute(1, 2, 0) * 255.0).byte().cpu().numpy().tobytes()
                     process_out.stdin.write(mid_bytes)
 
-                # Пишем оригинальный следующий кадр
+                
                 process_out.stdin.write(raw_frame)
-                I0.copy_(I1, non_blocking=True) # Быстрое копирование в VRAM
+                I0.copy_(I1, non_blocking=True) 
 
         process_in.stdout.close()
         process_out.stdin.close()
@@ -198,9 +198,9 @@ class RifeWorker:
         process_out.wait()
         print(f"\n[RIFE] Done! Saved to: {output_path}")
 
-# =====================================================================
-# 4. ФУНКЦИЯ ЗАПУСКА (Вызывается из main.py)
-# =====================================================================
+
+
+
 def run_rife(args_list):
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=str, required=True)

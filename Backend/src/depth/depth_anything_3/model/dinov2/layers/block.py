@@ -1,13 +1,13 @@
-# flake8: noqa: F821
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-#
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
 
-# References:
-#   https://github.com/facebookresearch/dino/blob/master/vision_transformer.py
-#   https://github.com/rwightman/pytorch-image-models/tree/master/timm/layers/patch_embed.py
+
+
+
+
+
+
+
+
+
 
 import logging
 from typing import Callable, Optional
@@ -45,7 +45,7 @@ class Block(nn.Module):
         ln_eps: float = 1e-6,
     ) -> None:
         super().__init__()
-        # print(f"biases: qkv: {qkv_bias}, proj: {proj_bias}, ffn: {ffn_bias}")
+        
         self.norm1 = norm_layer(dim, eps=ln_eps)
         self.attn = attn_class(
             dim,
@@ -82,7 +82,7 @@ class Block(nn.Module):
             return self.ls2(self.mlp(self.norm2(x)))
 
         if self.training and self.sample_drop_ratio > 0.1:
-            # the overhead is compensated only for a drop path rate larger than 0.1
+            
             x = drop_add_residual_stochastic_depth(
                 x,
                 residual_func=attn_residual_func,
@@ -96,7 +96,7 @@ class Block(nn.Module):
             )
         elif self.training and self.sample_drop_ratio > 0.0:
             x = x + self.drop_path1(attn_residual_func(x, pos=pos, attn_mask=attn_mask))
-            x = x + self.drop_path1(ffn_residual_func(x))  # FIXME: drop_path2
+            x = x + self.drop_path1(ffn_residual_func(x))  
         else:
             x = x + attn_residual_func(x, pos=pos, attn_mask=attn_mask)
             x = x + ffn_residual_func(x)
@@ -109,15 +109,15 @@ def drop_add_residual_stochastic_depth(
     sample_drop_ratio: float = 0.0,
     pos: Optional[Tensor] = None,
 ) -> Tensor:
-    # 1) extract subset using permutation
+    
     b, n, d = x.shape
     sample_subset_size = max(int(b * (1 - sample_drop_ratio)), 1)
     brange = (torch.randperm(b, device=x.device))[:sample_subset_size]
     x_subset = x[brange]
 
-    # 2) apply residual_func to get residual
+    
     if pos is not None:
-        # if necessary, apply rope to the subset
+        
         pos = pos[brange]
         residual = residual_func(x_subset, pos=pos)
     else:
@@ -128,7 +128,7 @@ def drop_add_residual_stochastic_depth(
 
     residual_scale_factor = b / sample_subset_size
 
-    # 3) add the residual
+    
     x_plus_residual = torch.index_add(
         x_flat, 0, brange, residual.to(dtype=x.dtype), alpha=residual_scale_factor
     )

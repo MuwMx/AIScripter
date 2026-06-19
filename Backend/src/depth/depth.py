@@ -117,18 +117,18 @@ STDTENSOR = (
 def calculateAspectRatio(width, height, depthQuality="high", isV3=False):
     if isV3:
         if depthQuality == "high":
-            return ((max(width, height) + 13) 
+            return ((max(width, height) + 13) // 14) * 14
         if depthQuality == "medium":
             return 700
         return 518
 
     if depthQuality == "high":
-        # Whilst this doesn't necessarily allign with the model, it produces
-        # sharper results at the cost of performance and some accuracy loss.
-        newHeight = ((height + 13) 
-        newWidth = ((width + 13) 
+        
+        
+        newHeight = ((height + 13) // 14) * 14
+        newWidth = ((width + 13) // 14) * 14
     else:
-        # I'd suggest 700px as a good middle ground for resizing
+        
         size = 700 if depthQuality == "medium" else 518
         newHeight = size
         newWidth = size
@@ -430,7 +430,7 @@ class DepthDirectMLV2:
                 "OpenVINO backend is an experimental feature, please report any issues you encounter.",
                 "yellow",
             )
-            import openvino  # noqa: F401
+            import openvino  
 
         self.handleModels()
 
@@ -515,16 +515,16 @@ class DepthDirectMLV2:
             self.model = self.ort.InferenceSession(
                 modelPath, providers=["CPUExecutionProvider"]
             )
-        # Bind on CPU memory; ORT will handle copies for DML provider
+        
         self.deviceType = "cpu"
         self.device = torch.device(self.deviceType)
 
-        # Calculate padded model resolution (height, width)
+        
         self.newHeight, self.newWidth = calculateAspectRatio(
             self.width, self.height, self.depthQuality
         )
 
-        # Discover actual I/O names and dtypes from the ONNX model
+        
         onnxInputs = self.model.get_inputs()
         onnxOutputs = self.model.get_outputs()
         self.inputName = onnxInputs[0].name
@@ -541,7 +541,7 @@ class DepthDirectMLV2:
         self.numpyOutDType = onnxTypeToNumpy(onnxOutputs[0].type)
         self.torchOutDType = onnxTypeToTorch(onnxOutputs[0].type)
 
-        # Allocate input/output buffers with correct shapes and dtypes
+        
         self.IoBinding = self.model.io_binding()
         self.dummyInput = torch.zeros(
             (1, 3, self.newHeight, self.newWidth),
@@ -553,7 +553,7 @@ class DepthDirectMLV2:
         if out_rank == 3:
             out_shape = (1, self.newHeight, self.newWidth)
         else:
-            # Default to NCHW with C=1 when unknown or 4D
+            
             out_shape = (1, 1, self.newHeight, self.newWidth)
 
         self.dummyOutput = torch.zeros(
@@ -1595,7 +1595,7 @@ class OGDepthV2DirectML:
                 "OpenVINO backend is an experimental feature, please report any issues you encounter.",
                 "yellow",
             )
-            import openvino  # noqa: F401
+            import openvino  
 
         self.handleModels()
 
@@ -1904,7 +1904,7 @@ class VideoDepthAnythingCUDA:
 
 
         self.model = self.model.to(checker.device).eval()
-        #self.model.half() if self.half else self.model.float()
+        
         self.device = "cuda" if checker.cudaAvailable else "cpu"
 
     def _resetVideoDepthState(self):
@@ -2024,7 +2024,7 @@ class VideoDepthAnythingTorch:
     def handleModels(self):
         from .video_depth_anything.video_depth_stream import VideoDepthAnything
 
-        # Map video_small_v2 -> og_video_small_v2 weights
+        
         weights_model = self.depth_method.replace("video_", "og_video_")
         self.filename = modelsMap(
             model=weights_model, modelType="pth", half=self.half
@@ -2077,14 +2077,14 @@ class VideoDepthAnythingTorch:
     def processFrame(self, frame):
         """Process a single frame - frame is a PyTorch tensor (C, H, W) or numpy array."""
         try:
-            # If tensor, convert to numpy for the model (it expects numpy RGB)
+            
             if isinstance(frame, torch.Tensor):
-                if frame.dim() == 3:  # C, H, W
+                if frame.dim() == 3:  
                     frame = frame.permute(1, 2, 0).cpu().numpy()
-                elif frame.dim() == 4:  # B, C, H, W
+                elif frame.dim() == 4:  
                     frame = frame.squeeze(0).permute(1, 2, 0).cpu().numpy()
             
-            # Ensure RGB format and uint8
+            
             if frame.dtype != np.uint8:
                 frame = (frame * 255).astype(np.uint8)
             

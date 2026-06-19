@@ -1,12 +1,12 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-#
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
 
-# References:
-#   https://github.com/facebookresearch/dino/blob/master/vision_transformer.py
-#   https://github.com/rwightman/pytorch-image-models/tree/master/timm/layers/patch_embed.py
+
+
+
+
+
+
+
+
 
 from typing import Callable, Optional, Tuple, Union
 import torch.nn as nn
@@ -48,8 +48,8 @@ class PatchEmbed(nn.Module):
         image_HW = make_2tuple(img_size)
         patch_HW = make_2tuple(patch_size)
         patch_grid_size = (
-            image_HW[0] 
-            image_HW[1] 
+            image_HW[0] // patch_HW[0],
+            image_HW[1] // patch_HW[1],
         )
 
         self.img_size = image_HW
@@ -76,12 +76,12 @@ class PatchEmbed(nn.Module):
             W % patch_W == 0
         ), f"Input image width {W} is not a multiple of patch width: {patch_W}"
 
-        x = self.proj(x)  # B C H W
+        x = self.proj(x)  
         H, W = x.size(2), x.size(3)
-        x = x.flatten(2).transpose(1, 2)  # B HW C
+        x = x.flatten(2).transpose(1, 2)  
         x = self.norm(x)
         if not self.flatten_embedding:
-            x = x.reshape(-1, H, W, self.embed_dim)  # B H W C
+            x = x.reshape(-1, H, W, self.embed_dim)  
         return x
 
     def flops(self) -> float:
