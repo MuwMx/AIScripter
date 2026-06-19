@@ -11,7 +11,8 @@ Backend/Lib/
 Backend/Scripts/
 
 Backend/ffmpeg_shared/
-Backend/weights/
+Backend/weights/*
+!Backend/weights/rife46/
 
 Backend/output/
 Backend/*.log
