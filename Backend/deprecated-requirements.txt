@@ -1,0 +1,9 @@
+basswood-av
+spandrel
+python-socketio
+vapoursynth
+celux
+pytorch-lightning
+colored
+rich
+rich-argparse

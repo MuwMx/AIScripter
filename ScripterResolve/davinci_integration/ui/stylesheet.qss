@@ -1,0 +1,95 @@
+/* Material 3 Dynamic Colors (Pixel Style) */
+QWidget {
+    background-color: #111318;
+    color: #e2e2e9;
+    font-family: "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+}
+
+/* Карточки и панели */
+QGroupBox {
+    background-color: #1a1c22;
+    border: 1px solid #43474e;
+    border-radius: 16px;
+    margin-top: 16px;
+    padding-top: 16px;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 10px;
+    color: #a8c7fa;
+    font-weight: bold;
+}
+
+/* Кнопки */
+QPushButton {
+    background-color: #a8c7fa;
+    color: #062e6f;
+    border-radius: 20px; /* Pill shape */
+    padding: 10px 20px;
+    font-weight: bold;
+    font-size: 14px;
+    border: none;
+}
+QPushButton:hover {
+    background-color: #bcdcff;
+}
+QPushButton:pressed {
+    background-color: #8ab4f8;
+    padding-top: 12px; /* Эффект нажатия */
+    padding-bottom: 8px;
+}
+QPushButton:disabled {
+    background-color: #43474e;
+    color: #8e9199;
+}
+
+/* Выпадающие списки и поля */
+QComboBox, QSpinBox, QDoubleSpinBox {
+    background-color: #282a30;
+    border: 1px solid #43474e;
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: #e2e2e9;
+}
+QComboBox::drop-down { border: none; }
+
+/* Терминал логов */
+QPlainTextEdit {
+    background-color: #0d0f14;
+    border: 1px solid #43474e;
+    border-radius: 12px;
+    font-family: Consolas, monospace;
+    font-size: 12px;
+    color: #a8c7fa;
+    padding: 8px;
+}
+
+/* Прогресс-бар */
+QProgressBar {
+    background-color: #282a30;
+    border: none;
+    border-radius: 4px;
+    text-align: center;
+    color: transparent; /* Скрываем текст процентов внутри бара */
+    height: 8px;
+}
+QProgressBar::chunk {
+    background-color: #a8c7fa;
+    border-radius: 4px;
+}
+
+/* Кастомный скроллбар */
+QScrollBar:vertical {
+    border: none;
+    background: transparent;
+    width: 8px;
+    margin: 0px;
+}
+QScrollBar::handle:vertical {
+    background: #43474e;
+    min-height: 20px;
+    border-radius: 4px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>MyScripter AI</title>
+    <script src="CSInterface.js"></script>
+    <style>
+        :root {
+            --bg-base: #1c1b1f;
+            --bg-surface: #2b2930;
+            --bg-surface-variant: #49454f;
+            --primary: #d0bcf0;
+            --on-primary: #381e70;
+            --error: #f2b8b5;
+            --success: #2ecc71;
+            --text-main: #e6e1e5;
+            --text-muted: #cac4d0;
+        }
+
+        body {
+            background: var(--bg-base);
+            color: var(--text-main);
+            font-family: 'Segoe UI', sans-serif;
+            padding: 12px;
+            margin: 0;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        /* Невидимый тонкий скроллбар */
+        body::-webkit-scrollbar { width: 4px; }
+        body::-webkit-scrollbar-thumb { background: var(--bg-surface-variant); border-radius: 4px; }
+        body::-webkit-scrollbar-track { background: transparent; }
+
+        /* Карточки и блоки */
+        /* Тонкие стильные борды и тени для объема */
+.m3-card {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Борд для объема */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Мягкая тень */
+}
+
+        /* Переносим статус-бар в собственную независимую карточку */
+        #status-container {
+            background: var(--bg-surface);
+            border-radius: 16px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            margin-top: auto;
+        }
+
+        /* Кастомное всплывающее уведомление (Snackbar) */
+        .snackbar {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: var(--error);
+            color: var(--on-primary);
+            text-align: center;
+            border-radius: 12px;
+            padding: 12px 16px;
+            position: fixed;
+            z-index: 999;
+            left: 50%;
+            bottom: 20px;
+            transform: translateX(-50%);
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s cubic-bezier(0.2, 0, 0, 1);
+        }
+        .snackbar.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 32px;
+        }
+        
+        .module-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--bg-surface-variant);
+        }
+        .module-row:last-child { border-bottom: none; }
+        .module-title { font-weight: 600; font-size: 14px; }
+        
+        /* Скрытые настройки (выпадают при включении тумблера) */
+        /* Плавный выезд через max-height и opacity */
+        .settings-panel {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            padding: 0 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            margin-top: 0;
+            font-size: 12px;
+            /* Умная интерполяция Material 3 */
+            transition: max-height 0.3s cubic-bezier(0.2, 0, 0, 1), 
+                        opacity 0.2s ease, 
+                        padding 0.3s cubic-bezier(0.2, 0, 0, 1),
+                        margin 0.3s cubic-bezier(0.2, 0, 0, 1);
+        }
+
+        .settings-panel.active {
+            max-height: 80px; /* Высоты с запасом хватит для слайдера или дропдауна */
+            opacity: 1;
+            padding: 8px;
+            margin-top: 6px;
+            margin-bottom: 4px;
+        }
+        
+        .control-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .m3-select, .m3-slider { width: 120px; background: var(--bg-base); color: var(--text-main); border: 1px solid var(--bg-surface-variant); border-radius: 4px; padding: 2px; }
+
+        .m3-btn {
+    width: 100%;
+    /* Кнопка почти всё время тёмная */
+    background: var(--bg-surface-variant);
+    color: var(--text-main);
+    border: none;
+    padding: 10px;
+    /* По дефолту круглая */
+    border-radius: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+    /* Жесткая интерполяция для дорогого эффекта */
+    transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.m3-btn:disabled { 
+    opacity: 0.3; 
+    cursor: not-allowed; 
+}
+
+/* SHAPE MORPHING + ЦВЕТ ПРИ НАВЕДЕНИИ */
+.m3-btn:hover:not(:disabled) {
+    /* Становится яркой/цветной */
+    background: var(--primary);
+    color: var(--on-primary);
+    /* Из круга превращается в скруглённый квадрат */
+    border-radius: 10px; 
+}
+
+/* ЭФФЕКТ ПРЫЖКА/СЖАТИЯ ПРИ КЛИКЕ */
+.m3-btn:active:not(:disabled) {
+    transform: scale(0.92);
+}
+
+        /* MATERIAL 3 SWITCH */
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; margin: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--bg-surface-variant); border-radius: 22px; transition: .3s; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: var(--text-muted); border-radius: 50%; transition: .3s cubic-bezier(0.2, 0, 0, 1); }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(18px); background-color: var(--on-primary); width: 16px; }
+
+        /* Подвал: Статус, Логи, Прогресс */
+        #status-container { margin-top: auto; }
+        .status-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 6px; }
+        
+        .icon-group { display: flex; gap: 8px; align-items: center; }
+        .icon-btn { 
+            background: transparent; border: none; padding: 2px; cursor: pointer; 
+            color: var(--text-muted); transition: 0.2s; display: flex; align-items: center; justify-content: center;
+        }
+        .icon-btn:hover { color: var(--primary); }
+        .icon-btn.trash:hover { color: var(--error); }
+        .icon-btn svg { width: 20px; height: 16px; fill: currentColor; }
+
+        /* Вращение стрелки логов */
+        .chevron { transition: transform 0.3s ease; }
+        .chevron.open { transform: rotate(180deg); }
+
+        .progress-track { background: var(--bg-surface-variant); height: 6px; border-radius: 3px; overflow: hidden; }
+        .progress-fill { background: var(--primary); width: 0%; height: 100%; transition: width 0.3s; }
+
+        /* Терминал логов */
+        .logs-container {
+            display: none;
+            background: #000;
+            border-radius: 8px;
+            padding: 8px;
+            height: 120px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 10px;
+            color: #aaa;
+            margin-top: 8px;
+            border: 1px solid var(--bg-surface-variant);
+        }
+        .logs-container.active { display: block; }
+        .log-entry { margin-bottom: 2px; word-wrap: break-word; }
+        .log-entry.success { color: var(--success); }
+        .log-entry.error { color: var(--error); }
+        .log-entry.system { color: var(--primary); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="m3-card">
+        <h3 style="margin: 0 0 12px 0; font-size: 16px;">AI Processing Pipeline</h3>
+
+        <div class="module-row">
+            <span class="module-title">Smart Clean (Dedup)</span>
+            <label class="switch">
+                <input type="checkbox" id="toggle-clean" onchange="toggleSettings('settings-clean', this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="settings-panel" id="settings-clean">
+            <div class="control-row">
+                <span>Threshold: <span id="thresh-val" style="color: var(--primary); font-weight: bold;">0.995</span></span>
+                <input type="range" id="clean-thresh" class="m3-slider" min="0.900" max="0.999" step="0.001" value="0.995" oninput="document.getElementById('thresh-val').innerText = this.value">
+            </div>
+        </div>
+
+        <div class="module-row">
+            <span class="module-title">RIFE Interpolation</span>
+            <label class="switch">
+                <input type="checkbox" id="toggle-rife" onchange="toggleSettings('settings-rife', this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="settings-panel" id="settings-rife">
+            <div class="control-row">
+                <span>Scale Factor:</span>
+                <select id="rife-scale" class="m3-select">
+                    <option value="2">2x (Double)</option>
+                    <option value="4" selected>4x (Slow-Mo)</option>
+                    <option value="8">8x (Super)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="module-row">
+            <span class="module-title">Depth Map (10-bit)</span>
+            <label class="switch">
+                <input type="checkbox" id="toggle-depth" onchange="toggleSettings('settings-depth', this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="settings-panel" id="settings-depth">
+            <div class="control-row">
+                <span>Model Size:</span>
+                <select id="depth-size" class="m3-select">
+                    <option value="vits" selected>Small (Fast)</option>
+                    <option value="vitb">Base (Quality)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="module-row">
+            <span class="module-title">Background Removal</span>
+            <label class="switch">
+                <input type="checkbox" id="toggle-bg">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <button class="m3-btn" id="btn-run" onclick="runPipeline()">Run Pipeline</button>
+     </div>
+
+    <div id="status-container">
+        <div class="status-header">
+            <span id="status-text">Ready. Waiting for task...</span>
+            <div class="icon-group">
+                <button id="clearCacheBtn" class="icon-btn trash" title="Clear AE Cache" onclick="clearCache()">
+                    <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+                <button id="copyLogsBtn" class="icon-btn" title="Copy All Logs" onclick="copyLogs()">
+                    <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                </button>
+                <button class="icon-btn" title="Toggle Logs" onclick="toggleLogs()">
+                    <svg id="log-chevron" class="chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        
+        <div class="logs-container" id="logsBox">
+            <div class="log-entry system">> Plugin initialized. Waiting for tasks...</div>
+        </div>
+    </div>
+
+    <div id="snackbar" class="snackbar"></div>
+
+    <script src="main.js"></script>
+    <script>
+        // Простая UI-логика сворачивания настроек
+        function toggleSettings(id, isChecked) {
+            const panel = document.getElementById(id);
+            if(isChecked) panel.classList.add('active');
+            else panel.classList.remove('active');
+        }
+
+        function toggleLogs() {
+            const logsBox = document.getElementById('logsBox');
+            const chevron = document.getElementById('log-chevron');
+            logsBox.classList.toggle('active');
+            chevron.classList.toggle('open');
+        }
+    </script>
+</body>
+</html>

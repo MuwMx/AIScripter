@@ -1,0 +1,130 @@
+/* Переменные Material 3 Dynamic Colors */
+:root {
+    --md-sys-color-background: #111318;
+    --md-sys-color-surface: #1a1c22;
+    --md-sys-color-surface-variant: #43474e;
+    --md-sys-color-primary: #a8c7fa;
+    --md-sys-color-on-primary: #062e6f;
+    --md-sys-color-outline: #43474e;
+    --md-sys-color-text: #e2e2e9;
+    --md-sys-color-text-secondary: #c4c6d0;
+    --radius-large: 24px;
+    --radius-medium: 12px;
+}
+
+body {
+    background-color: var(--md-sys-color-background);
+    color: var(--md-sys-color-text);
+    font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
+    margin: 0;
+    padding: 16px;
+    user-select: none;
+}
+
+/* Карточки инструментов */
+.m3-card {
+    background: var(--md-sys-color-surface);
+    border-radius: var(--radius-large);
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 1px solid var(--md-sys-color-outline);
+    transition: all 0.2s ease;
+}
+
+.m3-card h3 {
+    margin: 0 0 12px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--md-sys-color-primary);
+}
+
+/* Кнопки */
+.m3-btn {
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 100px; /* Полностью круглые края M3 */
+    font-weight: 600;
+    font-size: 14px;
+    width: 100%;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+    margin-top: 12px;
+}
+
+.m3-btn:hover { filter: brightness(1.1); }
+.m3-btn:active { filter: brightness(0.9); }
+.m3-btn:disabled { background: var(--md-sys-color-surface-variant); color: #888; cursor: not-allowed; }
+
+/* Элементы управления (Слайдеры и Селекты) */
+.control-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--md-sys-color-text-secondary);
+}
+
+.m3-select {
+    background: var(--md-sys-color-background);
+    color: var(--md-sys-color-text);
+    border: 1px solid var(--md-sys-color-outline);
+    padding: 6px 12px;
+    border-radius: 8px;
+    outline: none;
+    font-family: inherit;
+}
+
+.m3-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--md-sys-color-surface-variant);
+    border-radius: 2px;
+    outline: none;
+    margin-top: 8px;
+}
+
+.m3-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--md-sys-color-primary);
+    cursor: pointer;
+}
+
+/* Прогресс-бар и статус */
+#status-container {
+    background: var(--md-sys-color-surface);
+    border-radius: var(--radius-medium);
+    padding: 16px;
+    margin-top: 20px;
+    border: 1px solid var(--md-sys-color-outline);
+}
+
+#status-text {
+    font-size: 12px;
+    color: var(--md-sys-color-primary);
+    margin-bottom: 8px;
+    font-family: monospace;
+    word-wrap: break-word;
+}
+
+.progress-track {
+    width: 100%;
+    height: 6px;
+    background: var(--md-sys-color-background);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    width: 0%;
+    height: 100%;
+    background: var(--md-sys-color-primary);
+    transition: width 0.3s ease;
+}
