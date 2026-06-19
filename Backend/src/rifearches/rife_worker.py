@@ -74,8 +74,8 @@ from src.rifearches.IFNet_rife46 import IFNet
 # =====================================================================
 def pad_image(img_tensor, multiplier=32):
     h, w = img_tensor.shape[2], img_tensor.shape[3]
-    pad_h = ((h - 1) // multiplier + 1) * multiplier - h
-    pad_w = ((w - 1) // multiplier + 1) * multiplier - w
+    pad_h = ((h - 1) 
+    pad_w = ((w - 1) 
     if pad_h == 0 and pad_w == 0:
         return img_tensor, (0, 0, 0, 0)
     padding = (0, pad_w, 0, pad_h)

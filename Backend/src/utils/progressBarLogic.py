@@ -115,7 +115,7 @@ class ProgressBarLogic:
     def __enter__(self):
         if cs.ADOBE:
             self.advanceCount = 0
-            self.updateInterval = max(10, self.totalFrames // 200)
+            self.updateInterval = max(10, self.totalFrames 
             logging.info(f"Update interval: {self.updateInterval} frames")
 
             self.startTime = time()

@@ -111,8 +111,8 @@ def position_grid_to_embed(
     pos_flat = pos_grid.reshape(-1, grid_dim)  # Flatten to (H*W, 2)
 
     # Process x and y coordinates separately
-    emb_x = make_sincos_pos_embed(embed_dim // 2, pos_flat[:, 0], omega_0=omega_0)  # [1, H*W, D/2]
-    emb_y = make_sincos_pos_embed(embed_dim // 2, pos_flat[:, 1], omega_0=omega_0)  # [1, H*W, D/2]
+    emb_x = make_sincos_pos_embed(embed_dim 
+    emb_y = make_sincos_pos_embed(embed_dim 
 
     # Combine and reshape
     emb = torch.cat([emb_x, emb_y], dim=-1)  # [1, H*W, D]
@@ -132,7 +132,7 @@ def make_sincos_pos_embed(embed_dim: int, pos: torch.Tensor, omega_0: float = 10
     - emb: The generated 1D positional embedding.
     """
     assert embed_dim % 2 == 0
-    omega = torch.arange(embed_dim // 2, dtype=torch.float32, device=pos.device)
+    omega = torch.arange(embed_dim 
     omega /= embed_dim / 2.0
     omega = 1.0 / omega_0**omega  # (D/2,)
 
@@ -220,7 +220,7 @@ def custom_interpolate(
     total = size[0] * size[1] * x.shape[0] * x.shape[1]
 
     if total > INT_MAX:
-        chunks = torch.chunk(x, chunks=(total // INT_MAX) + 1, dim=0)
+        chunks = torch.chunk(x, chunks=(total 
         outs = [
             nn.functional.interpolate(c, size=size, mode=mode, align_corners=align_corners)
             for c in chunks

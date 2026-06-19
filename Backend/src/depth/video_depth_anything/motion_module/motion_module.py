@@ -45,7 +45,7 @@ class TemporalModule(nn.Module):
         self.temporal_transformer = TemporalTransformer3DModel(
             in_channels=in_channels,
             num_attention_heads=num_attention_heads,
-            attention_head_dim=in_channels // num_attention_heads,
+            attention_head_dim=in_channels 
             num_layers=num_transformer_block,
             num_attention_blocks=num_attention_blocks,
             norm_num_groups=norm_num_groups,
@@ -115,7 +115,7 @@ class TemporalTransformer3DModel(nn.Module):
 
         # Transformer Blocks
         if cached_hidden_state_list is not None:
-            n = len(cached_hidden_state_list) // len(self.transformer_blocks)
+            n = len(cached_hidden_state_list) 
         else:
             n = 0
         for i, block in enumerate(self.transformer_blocks):
@@ -285,8 +285,8 @@ class TemporalAttention(CrossAttention):
 
 
         use_memory_efficient = XFORMERS_AVAILABLE and self._use_memory_efficient_attention_xformers
-        if use_memory_efficient and (dim // self.heads) % 8 != 0:
-            # print('Warning: the dim {} cannot be divided by 8. Fall into normal attention'.format(dim // self.heads))
+        if use_memory_efficient and (dim 
+            # print('Warning: the dim {} cannot be divided by 8. Fall into normal attention'.format(dim 
             use_memory_efficient = False
 
         # attention, what we cannot get enough of
@@ -303,7 +303,7 @@ class TemporalAttention(CrossAttention):
             key = self.reshape_heads_to_batch_dim(key)
             value = self.reshape_heads_to_batch_dim(value)
 
-            if self._slice_size is None or query.shape[0] // self._slice_size == 1:
+            if self._slice_size is None or query.shape[0] 
                 hidden_states = self._attention(query, key, value, attention_mask)
             else:
                 raise NotImplementedError

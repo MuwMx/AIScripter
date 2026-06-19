@@ -38,15 +38,15 @@ def _make_swin_backbone(
     )
     pretrained.act_postprocess2 = nn.Sequential(
         Transpose(1, 2),
-        nn.Unflatten(2, torch.Size((patch_grid_size // 2).tolist()))
+        nn.Unflatten(2, torch.Size((patch_grid_size 
     )
     pretrained.act_postprocess3 = nn.Sequential(
         Transpose(1, 2),
-        nn.Unflatten(2, torch.Size((patch_grid_size // 4).tolist()))
+        nn.Unflatten(2, torch.Size((patch_grid_size 
     )
     pretrained.act_postprocess4 = nn.Sequential(
         Transpose(1, 2),
-        nn.Unflatten(2, torch.Size((patch_grid_size // 8).tolist()))
+        nn.Unflatten(2, torch.Size((patch_grid_size 
     )
 
     return pretrained

@@ -110,11 +110,11 @@ class DPTHead(nn.Module):
         head_features_2 = 32
 
         self.scratch.output_conv1 = nn.Conv2d(
-            head_features_1, head_features_1 // 2, kernel_size=3, stride=1, padding=1
+            head_features_1, head_features_1 
         )
         self.scratch.output_conv2 = nn.Sequential(
             nn.Conv2d(
-                head_features_1 // 2,
+                head_features_1 
                 head_features_2,
                 kernel_size=3,
                 stride=1,
@@ -197,7 +197,7 @@ class DepthAnythingV2(nn.Module):
         )
 
     def forward(self, frame):
-        patch_h, patch_w = frame.shape[-2] // 14, frame.shape[-1] // 14
+        patch_h, patch_w = frame.shape[-2] 
 
         features = self.pretrained.get_intermediate_layers(
             frame, self.intermediate_layer_idx[self.encoder], return_class_token=True

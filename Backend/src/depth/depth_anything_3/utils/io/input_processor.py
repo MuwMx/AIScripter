@@ -156,8 +156,8 @@ class InputProcessor:
         center_crop = T.CenterCrop((min_h, min_w))
         new_imgs, new_sizes, new_ixts = [], [], []
         for img_t, (H, W), K in zip(processed_images, out_sizes, out_intrinsics):
-            crop_top = max(0, (H - min_h) // 2)
-            crop_left = max(0, (W - min_w) // 2)
+            crop_top = max(0, (H - min_h) 
+            crop_left = max(0, (W - min_w) 
             new_imgs.append(center_crop(img_t))
             new_sizes.append((min_h, min_w))
             if K is None:
@@ -245,8 +245,8 @@ class InputProcessor:
         if intrinsic is None:
             return None
         K = intrinsic.copy()
-        crop_h = (orig_h - h) // 2
-        crop_w = (orig_w - w) // 2
+        crop_h = (orig_h - h) 
+        crop_w = (orig_w - w) 
         K[0, 2] -= crop_w
         K[1, 2] -= crop_h
         return K
@@ -313,12 +313,12 @@ class InputProcessor:
         Example: 504x377 -> 504x364
         """
         w, h = img.size
-        new_w = (w // patch) * patch
-        new_h = (h // patch) * patch
+        new_w = (w 
+        new_h = (h 
         if new_w == w and new_h == h:
             return img
-        left = (w - new_w) // 2
-        top = (h - new_h) // 2
+        left = (w - new_w) 
+        top = (h - new_h) 
         return img.crop((left, top, left + new_w, top + new_h))
 
     def _make_divisible_by_resize(self, img: Image.Image, patch: int) -> Image.Image:
@@ -328,7 +328,7 @@ class InputProcessor:
         w, h = img.size
 
         def nearest_multiple(x: int, p: int) -> int:
-            down = (x // p) * p
+            down = (x 
             up = down + p
             return up if abs(up - x) <= abs(x - down) else down
 

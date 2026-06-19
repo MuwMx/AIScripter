@@ -67,7 +67,7 @@ class VideoDepthAnything(nn.Module):
 
     def forward_depth(self, features, x_shape, cached_hidden_state_list=None):
         B, T, C, H, W = x_shape
-        patch_h, patch_w = H // 14, W // 14
+        patch_h, patch_w = H 
         depth, cur_cached_hidden_state_list = self.head(features, patch_h, patch_w, T, cached_hidden_state_list=cached_hidden_state_list)
         depth = F.interpolate(depth, size=(H, W), mode="bilinear", align_corners=True)
         depth = F.relu(depth)

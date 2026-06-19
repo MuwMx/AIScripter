@@ -34,7 +34,7 @@ def forward_flex(self, x):
     b, c, h, w = x.shape
 
     pos_embed = self._resize_pos_embed(
-        self.pos_embed, h // self.patch_size[1], w // self.patch_size[0]
+        self.pos_embed, h 
     )
 
     B = x.shape[0]
@@ -153,8 +153,8 @@ def _make_vit_b_rn50_backbone(
             final_layer = nn.ConvTranspose2d(
                 in_channels=features[s],
                 out_channels=features[s],
-                kernel_size=4 // (2 ** s),
-                stride=4 // (2 ** s),
+                kernel_size=4 
+                stride=4 
                 padding=0,
                 bias=True,
                 dilation=1,
@@ -174,7 +174,7 @@ def _make_vit_b_rn50_backbone(
         layers = [
             readout_oper[s],
             Transpose(1, 2),
-            nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+            nn.Unflatten(2, torch.Size([size[0] 
             nn.Conv2d(
                 in_channels=vit_features,
                 out_channels=features[s],

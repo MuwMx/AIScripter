@@ -45,10 +45,10 @@ class MainWindow(QMainWindow):
                 color: #ffb4ab; 
                 font-weight: bold; 
                 font-size: 11px;
-                background-color: #251819; /* Мягкий темный красно-бордовый фон */
-                border: 1px solid #422324;   /* Четкая граница блока */
+                background-color: #251819; 
+                border: 1px solid #422324;   
                 border-radius: 6px; 
-                padding: 6px 8px;            /* Внутренние отступы, чтобы текст не лип к рамке */
+                padding: 6px 8px;            
             }
         """)
         layout.addWidget(instruction)
@@ -210,7 +210,7 @@ class MainWindow(QMainWindow):
             QProgressBar {
                 border: none;
                 background-color: #23232a;
-                height: 2px; /* Уменьшили толщину до минимума */
+                height: 2px; 
                 border-radius: 1px;
                 text-align: center;
             }

@@ -29,9 +29,9 @@ class DPTDepthEstimationHead(nn.Module):
             self.projection = nn.Conv2d(features, features, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
 
         self.head = nn.Sequential(
-            nn.Conv2d(features, features // 2, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(features, features 
             nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
-            nn.Conv2d(features // 2, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(features 
             nn.ReLU(),
             nn.Conv2d(32, 1, kernel_size=1, stride=1, padding=0),
             nn.ReLU(),
@@ -196,9 +196,9 @@ class DPTDepthEstimationHeadElu(nn.Module):
 
         features = config.fusion_hidden_size
         self.head = nn.Sequential(
-            nn.Conv2d(features, features // 2, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(features, features 
             nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
-            nn.Conv2d(features // 2, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(features 
             nn.ReLU(),
             nn.Conv2d(32, 1, kernel_size=1, stride=1, padding=0),
             nn.ELU(),
@@ -365,8 +365,8 @@ class DPTNeckHeadForUnet(DPTPreTrainedModel):
             _, _, height, width = hidden_states[3].shape
             height *= 8; width *= 8
             patch_size = self.config.backbone_config.patch_size
-            patch_height = height // patch_size
-            patch_width = width // patch_size
+            patch_height = height 
+            patch_width = width 
 
         hidden_states = self.neck(hidden_states, patch_height, patch_width)
 
@@ -510,8 +510,8 @@ class DPTNeckHeadForUnetAfterUpsample(DPTPreTrainedModel):
             _, _, height, width = hidden_states[3].shape
             height *= 8; width *= 8
             patch_size = self.config.backbone_config.patch_size
-            patch_height = height // patch_size
-            patch_width = width // patch_size
+            patch_height = height 
+            patch_width = width 
 
         # import pdb
         # pdb.set_trace()
@@ -658,8 +658,8 @@ class DPTNeckHeadForUnetAfterUpsampleWithVaeDecoderWithNeck(DPTPreTrainedModel):
             _, _, height, width = hidden_states[3].shape
             height *= 8; width *= 8
             patch_size = self.config.backbone_config.patch_size
-            patch_height = height // patch_size
-            patch_width = width // patch_size
+            patch_height = height 
+            patch_width = width 
 
         # import pdb
         # pdb.set_trace()
@@ -809,8 +809,8 @@ class DPTNeckHeadForUnetAfterUpsampleWithVaeDecoderWithoutNeck(DPTPreTrainedMode
         #     _, _, height, width = hidden_states[3].shape
         #     height *= 8; width *= 8
         #     patch_size = self.config.backbone_config.patch_size
-        #     patch_height = height // patch_size
-        #     patch_width = width // patch_size
+        #     patch_height = height 
+        #     patch_width = width 
 
         # # import pdb
         # # pdb.set_trace()

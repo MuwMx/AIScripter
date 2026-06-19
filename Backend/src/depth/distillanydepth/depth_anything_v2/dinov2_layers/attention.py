@@ -37,7 +37,7 @@ class Attention(nn.Module):
     ) -> None:
         super().__init__()
         self.num_heads = num_heads
-        head_dim = dim // num_heads
+        head_dim = dim 
         self.scale = head_dim**-0.5
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
@@ -49,7 +49,7 @@ class Attention(nn.Module):
         B, N, C = x.shape
         qkv = (
             self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, C // self.num_heads)
+            .reshape(B, N, 3, self.num_heads, C 
             .permute(2, 0, 3, 1, 4)
         )
 
@@ -72,7 +72,7 @@ class MemEffAttention(Attention):
             return super().forward(x)
 
         B, N, C = x.shape
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads)
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C 
 
         q, k, v = unbind(qkv, 2)
 

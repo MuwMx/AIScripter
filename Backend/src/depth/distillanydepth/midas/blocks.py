@@ -396,7 +396,7 @@ class FeatureFusionBlock_custom(nn.Module):
         self.expand = expand
         out_features = features
         if self.expand==True:
-            out_features = features//2
+            out_features = features
         
         self.out_conv = nn.Conv2d(features, out_features, kernel_size=1, stride=1, padding=0, bias=True, groups=1)
 

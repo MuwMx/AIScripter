@@ -1,22 +1,22 @@
-// =====================================================================
-// MyScripter AE - ExtendScript Automation
-// =====================================================================
 
-// Функция-санитар: БЕЗОПАСНАЯ ВЕРСИЯ
+
+
+
+
 function forceCloseUndoGroups() {
-    // Пытаемся закрыть максимум 5 раз, чтобы избежать бесконечного цикла
+    
     for (var i = 0; i < 5; i++) {
         try {
             app.endUndoGroup();
         } catch (e) {
-            // Игнорируем
+            
         }
     }
 }
 
 var MyScripterAI = {
     
-    // Проверка: сохранен ли проект?
+    
     getProjectPath: function() {
         try {
             if (!app.project.file) return "null";
@@ -24,7 +24,7 @@ var MyScripterAI = {
             var rawName = app.project.file.name.replace(/\.aep$/i, "");
             var projName = rawName;
             
-            // Безопасный декод. Если словит ошибку (например из-за знака %), оставит как есть
+            
             try { 
                 projName = decodeURI(rawName); 
             } catch(e) {}
@@ -36,10 +36,10 @@ var MyScripterAI = {
         }
     },
 
-    // 1. Экспорт слоя для нейросети
+    
     exportLayer: function(inputFolder, fileName) {
         var comp = app.project.activeItem;
-        // Заменили JSON.stringify на ручную сборку строк
+        
         if (!comp || !(comp instanceof CompItem)) return '{"error": "Select a composition!"}';
         if (comp.selectedLayers.length === 0) return '{"error": "Select a layer!"}';
 
@@ -66,26 +66,26 @@ var MyScripterAI = {
             }
             tempLayer.enabled = true;
 
-            // ФИКС ОКРУГЛЕНИЯ АЕ: Считаем тайминги с защитой от вылета за край таймлайна
+            
             var waStart = tempLayer.inPoint;
             var waDuration = tempLayer.outPoint - tempLayer.inPoint;
 
-            // Корректируем старт, если он ушел в минус или за край
+            
             if (waStart < 0) waStart = 0;
             if (waStart > tempComp.duration) waStart = tempComp.duration;
 
-            // Если старт + длительность слоя превышают общую длину композиции,
-            // принудительно подрезаем рабочую область ровно до конца композиции
+            
+            
             if (waStart + waDuration > tempComp.duration) {
                 waDuration = tempComp.duration - waStart;
             }
 
-            // Защита на случай, если длительность округлилась в ноль
+            
             if (waDuration < tempComp.frameDuration) {
                 waDuration = tempComp.frameDuration;
             }
 
-            // Применяем проверенные значения
+            
             tempComp.workAreaStart = waStart;
             tempComp.workAreaDuration = waDuration;
 
@@ -110,10 +110,10 @@ var MyScripterAI = {
             app.project.renderQueue.showWindow(false);
             comp.openInViewer(); 
 
-            // Экранируем слеши для безопасной передачи пути в JS
+            
             var safeInputPath = fileOut.fsName.replace(/\\/g, '\\\\');
             
-            // Собираем успешный ответ вручную
+            
             return '{"status": "success", "inputPath": "' + safeInputPath + '", "inPoint": ' + layer.inPoint + ', "fps": ' + comp.frameRate + '}';
         } catch (e) {
             return '{"error": "' + e.toString().replace(/"/g, '\\"') + '"}';
@@ -122,14 +122,14 @@ var MyScripterAI = {
         }
     },
 
-    // 2. Импорт результата
+    
     importResult: function(filePath, inPoint) {
         var comp = app.project.activeItem;
         if (!comp) return "error";
 
         var layerName = "";
         
-        forceCloseUndoGroups(); // <--- Убиваем хвосты от прошлых ошибок
+        forceCloseUndoGroups(); 
         app.beginUndoGroup("Import AI Result");
         try {
             var io = new ImportOptions(new File(filePath));
@@ -150,7 +150,7 @@ var MyScripterAI = {
         return layerName;
     },
 
-    // 3. Восстановление тайминга (Для дедупликатора)
+    
     applyTimeRemap: function(layerName, jsonPath) {
         var comp = app.project.activeItem;
         var layer = comp.layer(layerName);
@@ -183,7 +183,7 @@ var MyScripterAI = {
                 trProp.setInterpolationTypeAtKey(keyIndex, KeyframeInterpolationType.HOLD, KeyframeInterpolationType.HOLD);
             }
         } catch (e) {
-            // Игнорируем ошибки, но закрываем группу
+            
         } finally {
             app.endUndoGroup();
         }

@@ -128,7 +128,7 @@ class RotaryPositionEmbedding2D(nn.Module):
             Rotated feature tensor.
         """
         feature_dim = x.shape[-1]
-        x1, x2 = x[..., : feature_dim // 2], x[..., feature_dim // 2 :]
+        x1, x2 = x[..., : feature_dim 
         return torch.cat((-x2, x1), dim=-1)
 
     def _apply_1d_rope(
@@ -177,7 +177,7 @@ class RotaryPositionEmbedding2D(nn.Module):
         ), "Positions must have shape (batch_size, n_tokens, 2)"
 
         # Compute feature dimension for each spatial direction
-        feature_dim = tokens.size(-1) // 2
+        feature_dim = tokens.size(-1) 
 
         # Get frequency components
         max_position = int(positions.max()) + 1

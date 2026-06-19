@@ -85,7 +85,7 @@ class DPTHeadTemporal(DPTHead):
 
             x = x.permute(0, 2, 1).reshape((x.shape[0], x.shape[-1], patch_h, patch_w)).contiguous()
 
-            B, T = x.shape[0] // frame_length, frame_length
+            B, T = x.shape[0] 
             x = self.projects[i](x)
             x = self.resize_layers[i](x)
 
@@ -93,9 +93,9 @@ class DPTHeadTemporal(DPTHead):
 
         layer_1, layer_2, layer_3, layer_4 = out
 
-        B, T = layer_1.shape[0] // frame_length, frame_length
+        B, T = layer_1.shape[0] 
         if cached_hidden_state_list is not None:
-            N = len(cached_hidden_state_list) // len(self.motion_modules)
+            N = len(cached_hidden_state_list) 
         else:
             N = 0
 

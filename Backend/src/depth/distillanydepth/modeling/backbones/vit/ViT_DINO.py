@@ -117,8 +117,8 @@ class PatchEmbed(nn.Module):
         image_HW = make_2tuple(img_size)
         patch_HW = make_2tuple(patch_size)
         patch_grid_size = (
-            image_HW[0] // patch_HW[0],
-            image_HW[1] // patch_HW[1],
+            image_HW[0] 
+            image_HW[1] 
         )
 
         self.img_size = image_HW
@@ -241,7 +241,7 @@ class SwiGLUFFNFused(SwiGLU):
     ) -> None:
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        hidden_features = (int(hidden_features * 2 / 3) + 7) // 8 * 8
+        hidden_features = (int(hidden_features * 2 / 3) + 7) 
         super().__init__(
             in_features=in_features,
             hidden_features=hidden_features,
@@ -274,7 +274,7 @@ class Attention(nn.Module):
     ) -> None:
         super().__init__()
         self.num_heads = num_heads
-        head_dim = dim // num_heads
+        head_dim = dim 
         self.scale = head_dim**-0.5
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
@@ -291,7 +291,7 @@ class Attention(nn.Module):
         B, N, C = x.shape
         qkv = (
             self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, C // self.num_heads)
+            .reshape(B, N, 3, self.num_heads, C 
             .permute(2, 0, 3, 1, 4)
         )
 
@@ -318,7 +318,7 @@ class MemEffAttention(Attention):
             return super().forward(x, attn_bias)
 
         B, N, C = x.shape
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads)
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C 
 
         q, k, v = unbind(qkv, 2)
         if attn_bias is not None:
@@ -738,7 +738,7 @@ class DinoVisionTransformer(nn.Module):
         if block_chunks > 0:
             self.chunked_blocks = True
             chunked_blocks = []
-            chunksize = depth // block_chunks
+            chunksize = depth 
             for i in range(0, depth, chunksize):
                 # this is to keep the block index consistent if we chunk the block list
                 chunked_blocks.append(
@@ -771,8 +771,8 @@ class DinoVisionTransformer(nn.Module):
         class_pos_embed = pos_embed[:, 0]
         patch_pos_embed = pos_embed[:, 1:]
         dim = x.shape[-1]
-        w0 = w // self.patch_size
-        h0 = h // self.patch_size
+        w0 = w 
+        h0 = h 
         # we add a small number to avoid floating point error in the interpolation
         # see discussion at https://github.com/facebookresearch/dino/issues/8
         w0, h0 = w0 + 0.1, h0 + 0.1
@@ -840,7 +840,7 @@ class DinoVisionTransformer(nn.Module):
             pad_h = 0
         if pad_w == self.patch_size:
             pad_w = 0
-        # x = nn.functional.pad(x, (pad_h//2, pad_h-pad_h//2, pad_w//2, pad_w-pad_w//2))
+        # x = nn.functional.pad(x, (pad_h
         if pad_h + pad_w > 0:
             x = torch.nn.functional.interpolate(
                 x, (H + pad_h, W + pad_w), mode="bilinear"
@@ -853,10 +853,10 @@ class DinoVisionTransformer(nn.Module):
             x = blk(x)
         # for idx in range(len(self.blocks[0])):
         #     x = self.blocks[0][idx](x)
-        #     if (idx + 1) % (len(self.blocks[0]) // 4) == 0:
+        #     if (idx + 1) % (len(self.blocks[0]) 
         #         features.append(x)
 
-        # return [features, (B, (H+pad_h)//self.patch_size, (W+pad_w)//self.patch_size, H, W)]
+        # return [features, (B, (H+pad_h)
 
         x_norm = self.norm(x)
         # return {
@@ -872,7 +872,7 @@ class DinoVisionTransformer(nn.Module):
         features.append(x_norm)
         return [
             features,
-            (B, (H + pad_h) // self.patch_size, (W + pad_w) // self.patch_size, H, W),
+            (B, (H + pad_h) 
         ]
 
     def _get_intermediate_layers_not_chunked(self, x, n=1):
@@ -928,7 +928,7 @@ class DinoVisionTransformer(nn.Module):
         if reshape:
             B, _, w, h = x.shape
             outputs = [
-                out.reshape(B, w // self.patch_size, h // self.patch_size, -1)
+                out.reshape(B, w 
                 .permute(0, 3, 1, 2)
                 .contiguous()
                 for out in outputs
@@ -1086,7 +1086,7 @@ class DinoWindowVisionTransformer(nn.Module):
         if block_chunks > 0:
             self.chunked_blocks = True
             chunked_blocks = []
-            chunksize = depth // block_chunks
+            chunksize = depth 
             for i in range(0, depth, chunksize):
                 # this is to keep the block index consistent if we chunk the block list
                 chunked_blocks.append(
@@ -1113,8 +1113,8 @@ class DinoWindowVisionTransformer(nn.Module):
                 pad_h = 0
             if pad_w == self.patch_size:
                 pad_w = 0
-            self.nh = (H + pad_h) // self.patch_size
-            self.nw = (W + pad_w) // self.patch_size
+            self.nh = (H + pad_h) 
+            self.nw = (W + pad_w) 
             self.prepare_attn_bias((self.nh, self.nw))
         except:
             pass
@@ -1147,8 +1147,8 @@ class DinoWindowVisionTransformer(nn.Module):
         # patch_pos_embed = pos_embed[:, 1:]
         patch_pos_embed = pos_embed
         dim = x.shape[-1]
-        w0 = w // self.patch_size
-        h0 = h // self.patch_size
+        w0 = w 
+        h0 = h 
         # we add a small number to avoid floating point error in the interpolation
         # see discussion at https://github.com/facebookresearch/dino/issues/8
         w0, h0 = w0 + 0.1, h0 + 0.1
@@ -1187,7 +1187,7 @@ class DinoWindowVisionTransformer(nn.Module):
             H, W = hw[0], hw[1]
 
             x = x.view(
-                B, H // window_size, window_size, W // window_size, window_size, C
+                B, H 
             )
 
             windows = (
@@ -1199,7 +1199,7 @@ class DinoWindowVisionTransformer(nn.Module):
             B, C, H, W = x.shape
 
             x = x.view(
-                B, C, H // window_size, window_size, W // window_size, window_size
+                B, C, H 
             )
 
             windows = (
@@ -1231,9 +1231,9 @@ class DinoWindowVisionTransformer(nn.Module):
         """
         H, W = hw
 
-        B = windows.shape[0] // (H * W // window_size // window_size)
+        B = windows.shape[0] 
         x = windows.view(
-            B, H // window_size, W // window_size, window_size, window_size, -1
+            B, H 
         )
 
         if conv_feature == False:
@@ -1283,7 +1283,7 @@ class DinoWindowVisionTransformer(nn.Module):
         import xformers.components.attention.attention_patterns as AP
 
         nh, nw = shape
-        radius = (window_size - 1) // 2
+        radius = (window_size - 1) 
         mask_ori = AP.local_2d_pattern(
             nh, nw, distance=radius + 0.1, p=torch.inf
         ).cuda()
@@ -1357,21 +1357,21 @@ class DinoWindowVisionTransformer(nn.Module):
             pad_h = 0
         if pad_w == self.patch_size:
             pad_w = 0
-        # x = nn.functional.pad(x, (pad_h//2, pad_h-pad_h//2, pad_w//2, pad_w-pad_w//2))
+        # x = nn.functional.pad(x, (pad_h
         if pad_h + pad_w > 0:
             x = torch.nn.functional.interpolate(
                 x, (H + pad_h, W + pad_w), mode="bilinear"
             )
 
-        nh = (H + pad_h) // self.patch_size
-        nw = (W + pad_w) // self.patch_size
+        nh = (H + pad_h) 
+        nw = (W + pad_w) 
 
         if self.window_size > 0:
             if nh == self.nh and nw == self.nw:
                 attn_bias = self.attn_bias
             else:
                 attn_bias = self.prepare_attn_bias(
-                    ((H + pad_h) // self.patch_size, (W + pad_w) // self.patch_size)
+                    ((H + pad_h) 
                 )
                 self.nh = nh
                 self.nw = nw
@@ -1383,25 +1383,25 @@ class DinoWindowVisionTransformer(nn.Module):
         # x = self.patch_embed(x)
 
         features = []
-        # x = self.window_partition(x, self.window_size, (H // self.patch_size, W // self.patch_size))
+        # x = self.window_partition(x, self.window_size, (H 
         for blk in self.blocks:
             x = blk(x, attn_bias)
-        # x = self.window_unpartition(x, self.window_size, (H // self.patch_size, W // self.patch_size))
+        # x = self.window_unpartition(x, self.window_size, (H 
 
         # for idx in range(len(self.blocks[0])):
         #     x = self.blocks[0][idx](x, attn_bias)
 
-        #     if (idx + 1) % (len(self.blocks[0]) // 4) == 0:
-        #         x = self.window_unpartition(x, self.window_size, (H // self.patch_size, W // self.patch_size), conv_feature=True)
-        #         x = self.conv_block[idx // (len(self.blocks[0]) // 4)](x)
+        #     if (idx + 1) % (len(self.blocks[0]) 
+        #         x = self.window_unpartition(x, self.window_size, (H 
+        #         x = self.conv_block[idx 
         #         if idx + 1 != len(self.blocks[0]):
-        #             x = self.window_partition(x, self.window_size, (H // self.patch_size, W // self.patch_size), conv_feature=True)
+        #             x = self.window_partition(x, self.window_size, (H 
         #         else:
         #             b, c, h, w = x.size()
         #             x = x.permute(0, 2, 3, 1).contiguous().view(b, h, w, c)
         # features.append(x)
 
-        # return [features, (B, (H+pad_h)//self.patch_size, (W+pad_w)//self.patch_size, H, W)]
+        # return [features, (B, (H+pad_h)
 
         x_norm = self.norm(x)
         # return {
@@ -1417,7 +1417,7 @@ class DinoWindowVisionTransformer(nn.Module):
         features.append(x_norm)
         return [
             features,
-            (B, (H + pad_h) // self.patch_size, (W + pad_w) // self.patch_size, H, W),
+            (B, (H + pad_h) 
         ]
 
     def _get_intermediate_layers_not_chunked(self, x, n=1):
@@ -1473,7 +1473,7 @@ class DinoWindowVisionTransformer(nn.Module):
         if reshape:
             B, _, w, h = x.shape
             outputs = [
-                out.reshape(B, w // self.patch_size, h // self.patch_size, -1)
+                out.reshape(B, w 
                 .permute(0, 3, 1, 2)
                 .contiguous()
                 for out in outputs
@@ -1636,7 +1636,7 @@ if __name__ == "__main__":
 #     import xformers.components.attention.attention_patterns as AP
 
 #     B, nh, nw, _, _ = shape
-#     radius = (window_size-1)//2
+#     radius = (window_size-1)
 #     #time0 = time.time()
 #     d = AP.local_nd_distance(nh, nw, distance = radius + 0.1, p=torch.inf).cuda()
 #     #mask = AP.local_2d_pattern(nh, nw, distance = radius + 0.1, p=torch.inf).cuda()

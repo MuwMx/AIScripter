@@ -153,7 +153,7 @@ class DinoVisionTransformer(nn.Module):
         if block_chunks > 0:
             self.chunked_blocks = True
             chunked_blocks = []
-            chunksize = depth // block_chunks
+            chunksize = depth 
             for i in range(0, depth, chunksize):
                 # this is to keep the block index consistent if we chunk the block list
                 chunked_blocks.append([nn.Identity()] * i + blocks_list[i : i + chunksize])
@@ -186,8 +186,8 @@ class DinoVisionTransformer(nn.Module):
         class_pos_embed = pos_embed[:, 0]
         patch_pos_embed = pos_embed[:, 1:]
         dim = x.shape[-1]
-        w0 = w // self.patch_size
-        h0 = h // self.patch_size
+        w0 = w 
+        h0 = h 
         # we add a small number to avoid floating point error in the interpolation
         # see discussion at https://github.com/facebookresearch/dino/issues/8
         # DINOv2 with register modify the interpolate_offset from 0.1 to 0.0
@@ -313,7 +313,7 @@ class DinoVisionTransformer(nn.Module):
         if reshape:
             B, _, w, h = x.shape
             outputs = [
-                out.reshape(B, w // self.patch_size, h // self.patch_size, -1).permute(0, 3, 1, 2).contiguous()
+                out.reshape(B, w 
                 for out in outputs
             ]
         if return_class_token:

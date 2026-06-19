@@ -224,8 +224,8 @@ class PatchEmbed(nn.Module):
         image_HW = make_2tuple(img_size)
         patch_HW = make_2tuple(patch_size)
         patch_grid_size = (
-            image_HW[0] // patch_HW[0],
-            image_HW[1] // patch_HW[1],
+            image_HW[0] 
+            image_HW[1] 
         )
 
         self.img_size = image_HW
@@ -402,7 +402,7 @@ class SwiGLUFFNFused(SwiGLU):
     ) -> None:
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        hidden_features = (int(hidden_features * 2 / 3) + 7) // 8 * 8
+        hidden_features = (int(hidden_features * 2 / 3) + 7) 
         super().__init__(
             in_features=in_features,
             hidden_features=hidden_features,
@@ -436,7 +436,7 @@ class Attention(nn.Module):
     ) -> None:
         super().__init__()
         self.num_heads = num_heads
-        head_dim = dim // num_heads
+        head_dim = dim 
         self.scale = head_dim**-0.5
 
         if tuning_mode == "lora":
@@ -475,13 +475,13 @@ class Attention(nn.Module):
         if self.tuning_mode == "ssf":
             qkv = (
                 ssf_ada(self.qkv(x), self.ssf_scale_1, self.ssf_shift_1)
-                .reshape(B, N, 3, self.num_heads, C // self.num_heads)
+                .reshape(B, N, 3, self.num_heads, C 
                 .permute(2, 0, 3, 1, 4)
             )
         else:
             qkv = (
                 self.qkv(x)
-                .reshape(B, N, 3, self.num_heads, C // self.num_heads)
+                .reshape(B, N, 3, self.num_heads, C 
                 .permute(2, 0, 3, 1, 4)
             )
 
@@ -514,10 +514,10 @@ class MemEffAttention(Attention):
         B, N, C = x.shape
         if self.tuning_mode == "ssf":
             qkv = ssf_ada(self.qkv(x), self.ssf_scale_1, self.ssf_shift_1).reshape(
-                B, N, 3, self.num_heads, C // self.num_heads
+                B, N, 3, self.num_heads, C 
             )
         else:
-            qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads)
+            qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C 
 
         q, k, v = unbind(qkv, 2)
         if attn_bias is not None:
@@ -995,7 +995,7 @@ class DinoVisionTransformer(nn.Module):
         if block_chunks > 0:
             self.chunked_blocks = True
             chunked_blocks = []
-            chunksize = depth // block_chunks
+            chunksize = depth 
             for i in range(0, depth, chunksize):
                 # this is to keep the block index consistent if we chunk the block list
                 chunked_blocks.append(
@@ -1030,8 +1030,8 @@ class DinoVisionTransformer(nn.Module):
         class_pos_embed = pos_embed[:, 0]
         patch_pos_embed = pos_embed[:, 1:]
         dim = x.shape[-1]
-        w0 = w // self.patch_size
-        h0 = h // self.patch_size
+        w0 = w 
+        h0 = h 
         # we add a small number to avoid floating point error in the interpolation
         # see discussion at https://github.com/facebookresearch/dino/issues/8
         w0, h0 = w0 + self.interpolate_offset, h0 + self.interpolate_offset
@@ -1114,7 +1114,7 @@ class DinoVisionTransformer(nn.Module):
             pad_h = 0
         if pad_w == self.patch_size:
             pad_w = 0
-        # x = nn.functional.pad(x, (pad_h//2, pad_h-pad_h//2, pad_w//2, pad_w-pad_w//2))
+        # x = nn.functional.pad(x, (pad_h
         if pad_h + pad_w > 0:
             x = torch.nn.functional.interpolate(
                 x, (H + pad_h, W + pad_w), mode="bilinear"
@@ -1141,7 +1141,7 @@ class DinoVisionTransformer(nn.Module):
         # features.append(x_norm)
         # features.append(x_norm)
         # features.append(x_norm)
-        # return [features, (B, (H+pad_h)//self.patch_size, (W+pad_w)//self.patch_size, H, W, self.num_register_tokens)]
+        # return [features, (B, (H+pad_h)
 
         if self.multi_output == False:
             for blk in self.blocks:
@@ -1159,8 +1159,8 @@ class DinoVisionTransformer(nn.Module):
                 features,
                 (
                     B,
-                    (H + pad_h) // self.patch_size,
-                    (W + pad_w) // self.patch_size,
+                    (H + pad_h) 
+                    (W + pad_w) 
                     H,
                     W,
                     self.num_register_tokens,
@@ -1171,15 +1171,15 @@ class DinoVisionTransformer(nn.Module):
             for blk in self.blocks:
                 for idx, sub_blk in enumerate(blk):
                     x = sub_blk(x)
-                    if (idx + 1) % (len(blk) // 4) == 0:
+                    if (idx + 1) % (len(blk) 
                         features.append(x)
 
             return [
                 features,
                 (
                     B,
-                    (H + pad_h) // self.patch_size,
-                    (W + pad_w) // self.patch_size,
+                    (H + pad_h) 
+                    (W + pad_w) 
                     H,
                     W,
                     self.num_register_tokens,
@@ -1239,7 +1239,7 @@ class DinoVisionTransformer(nn.Module):
         if reshape:
             B, _, w, h = x.shape
             outputs = [
-                out.reshape(B, w // self.patch_size, h // self.patch_size, -1)
+                out.reshape(B, w 
                 .permute(0, 3, 1, 2)
                 .contiguous()
                 for out in outputs

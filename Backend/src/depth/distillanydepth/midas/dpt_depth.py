@@ -148,9 +148,9 @@ class DPTDepthModel(DPT):
         kwargs.pop("head_features_2", None)
 
         head = nn.Sequential(
-            nn.Conv2d(head_features_1, head_features_1 // 2, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(head_features_1, head_features_1 
             Interpolate(scale_factor=2, mode="bilinear", align_corners=True),
-            nn.Conv2d(head_features_1 // 2, head_features_2, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(head_features_1 
             nn.ReLU(True),
             nn.Conv2d(head_features_2, 1, kernel_size=1, stride=1, padding=0),
             nn.ReLU(True) if non_negative else nn.Identity(),

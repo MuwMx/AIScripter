@@ -3,12 +3,12 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-// Функция показа кастомного уведомления вместо системного алерта
+
 function showNotification(msg, type = 'error') {
     const snack = document.getElementById('snackbar');
     snack.innerText = msg;
     
-    // Настройка цвета под Material 3 варнинги
+    
     if (type === 'success') {
         snack.style.backgroundColor = 'var(--primary)';
         snack.style.color = 'var(--on-primary)';
@@ -21,7 +21,7 @@ function showNotification(msg, type = 'error') {
     setTimeout(() => { snack.classList.remove('show'); }, 3500);
 }
 
-// Фикс NotAllowedError: копирование через временный буфер (100% работает в AE)
+
 function copyLogs() {
     const logsBox = document.getElementById('logsBox');
     if (!logsBox) return;
@@ -33,10 +33,10 @@ function copyLogs() {
         return;
     }
 
-    // Создаем временную textarea для обхода ограничений безопасности CEF
+    
     const textarea = document.createElement('textarea');
     textarea.value = textToCopy;
-    textarea.style.position = 'fixed'; // Избегаем прокрутки страницы
+    textarea.style.position = 'fixed'; 
     document.body.appendChild(textarea);
     textarea.select();
     
@@ -68,23 +68,23 @@ function toggleButtons(disabled) {
     document.getElementById('clearCacheBtn').disabled = disabled;
 }
 
-// Функции для логгера
+
 function addLog(msg, type = '') {
     const box = document.getElementById('logsBox');
     const entry = document.createElement('div');
     entry.className = `log-entry ${type}`;
     entry.textContent = `> ${msg}`;
     box.appendChild(entry);
-    box.scrollTop = box.scrollHeight; // Автоскролл вниз
+    box.scrollTop = box.scrollHeight; 
 }
 
 function clearLogs() {
     document.getElementById('logsBox').innerHTML = '';
 }
 
-// 1. КОНВЕЙЕР (ОЧЕРЕДЬ ЗАДАЧ)
+
 async function runPipeline() {
-    // Собираем включенные задачи
+    
     const tasks = [];
     if (document.getElementById('toggle-clean').checked) tasks.push('clean');
     if (document.getElementById('toggle-rife').checked) tasks.push('rife');
@@ -100,7 +100,7 @@ async function runPipeline() {
     clearLogs();
     setStatus("Pipeline started...", 0);
     
-    // Выполняем задачи последовательно
+    
     for (let i = 0; i < tasks.length; i++) {
         const task = tasks[i];
         addLog(`--- STARTING TASK [${task.toUpperCase()}] (${i+1}/${tasks.length}) ---`, 'system');
@@ -112,7 +112,7 @@ async function runPipeline() {
             setStatus(`Pipeline aborted on [${task.toUpperCase()}]`, 0);
             addLog(`CRITICAL ERROR: ${err.message}`, 'error');
             toggleButtons(false);
-            return; // Прерываем конвейер при ошибке
+            return; 
         }
     }
 
@@ -121,7 +121,7 @@ async function runPipeline() {
     toggleButtons(false);
 }
 
-// 2. ИСПОЛНИТЕЛЬ ОДНОЙ ЗАДАЧИ (Обернут в Promise)
+
 function executeSingleTask(taskType) {
     return new Promise(async (resolve, reject) => {
         try {
@@ -147,7 +147,7 @@ function executeSingleTask(taskType) {
             let outputVideo = path.join(outputDir, outFileName);
             let inFileName = `chunk_${Date.now()}.mp4`;
 
-            // Экспорт из AE
+            
             setStatus(`[${taskType.toUpperCase()}] Exporting layer...`, 5);
             addLog(`Exporting layer to: ${inFileName}`);
             let safeInputDir = inputDir.replace(/\\/g, '/');
@@ -160,7 +160,7 @@ function executeSingleTask(taskType) {
                 return reject(new Error("AE Export Failed: " + data.error));
             }
 
-            // Настройка Python
+            
             const roamingPath = csInterface.getSystemPath(SystemPath.USER_DATA);
             const backendDir = path.join(roamingPath, 'MyScripterAE');
             const pythonExe = path.join(backendDir, 'python.exe');
@@ -188,13 +188,13 @@ function executeSingleTask(taskType) {
                 args.push('--weight', 'birefnet_finetuned_toonout.pth');
             }
 
-            // Запуск Python
+            
             setStatus(`[${taskType.toUpperCase()}] AI Processing...`, 20);
             addLog(`Starting Python Engine for ${taskType.toUpperCase()}...`);
             
             const pyProcess = spawn(pythonExe, args);
 
-            // Перехват логов
+            
             pyProcess.stderr.on('data', (chunk) => {
                 const text = chunk.toString().trim();
                 if(text) addLog(text);
@@ -208,7 +208,7 @@ function executeSingleTask(taskType) {
                 if(text) addLog(text);
             });
 
-            // Ожидание завершения
+            
             pyProcess.on('close', async (code) => {
                 if (code === 0) {
                     setStatus(`[${taskType.toUpperCase()}] Importing result...`, 95);
@@ -223,9 +223,9 @@ function executeSingleTask(taskType) {
                     }
                     
                     if (fs.existsSync(inputVideo)) {
-                        fs.unlinkSync(inputVideo); // Удаляем инпут
+                        fs.unlinkSync(inputVideo); 
                     }
-                    resolve(); // Успех, пускаем очередь дальше
+                    resolve(); 
                 } else {
                     reject(new Error(`Python Engine crashed with code ${code}`));
                 }
@@ -237,7 +237,7 @@ function executeSingleTask(taskType) {
     });
 }
 
-// 3. ОЧИСТКА КЭША ПО КЛИКУ НА КОРЗИНУ
+
 async function clearCache() {
     setStatus("Purging AE memory...", 0);
     await evalScript('app.purge(PurgeTarget.ALL_CACHES)');

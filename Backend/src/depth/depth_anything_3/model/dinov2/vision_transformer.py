@@ -44,7 +44,7 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
     out: (M, D)
     """
     assert embed_dim % 2 == 0
-    omega = np.arange(embed_dim // 2, dtype=float)
+    omega = np.arange(embed_dim 
     omega /= embed_dim / 2.0
     omega = 1.0 / 10000**omega  # (D/2,)
 
@@ -227,8 +227,8 @@ class DinoVisionTransformer(nn.Module):
         class_pos_embed = pos_embed[:, 0]
         patch_pos_embed = pos_embed[:, 1:]
         dim = x.shape[-1]
-        w0 = w // self.patch_size
-        h0 = h // self.patch_size
+        w0 = w 
+        h0 = h 
         M = int(math.sqrt(N))  # Recover the number of patches in each dimension
         assert N == M * M
         kwargs = {}
@@ -284,7 +284,7 @@ class DinoVisionTransformer(nn.Module):
         pos_nodiff = None
         if self.rope is not None:
             pos = self.position_getter(
-                B * S, H // self.patch_size, W // self.patch_size, device=device
+                B * S, H 
             )
             pos = rearrange(pos, "(b s) n c -> b s n c", b=B)
             pos_nodiff = torch.zeros_like(pos).to(pos.dtype)

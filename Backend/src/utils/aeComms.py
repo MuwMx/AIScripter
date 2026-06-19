@@ -97,7 +97,7 @@ def runServer(host, queue=None):
 
     logging.info(f"Starting AE comms server on {host}...")
 
-    parsed = urlparse(host if "://" in host else f"//{host}", scheme="http")
+    parsed = urlparse(host if "://" in host else f"
     hostname = parsed.hostname or "0.0.0.0"
     port = parsed.port or 8080
 

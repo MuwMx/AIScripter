@@ -57,9 +57,9 @@ class MidasNet_small(BaseModel):
 
         
         self.scratch.output_conv = nn.Sequential(
-            nn.Conv2d(features, features//2, kernel_size=3, stride=1, padding=1, groups=self.groups),
+            nn.Conv2d(features, features
             Interpolate(scale_factor=2, mode="bilinear"),
-            nn.Conv2d(features//2, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(features
             self.scratch.activation,
             nn.Conv2d(32, 1, kernel_size=1, stride=1, padding=0),
             nn.ReLU(True) if non_negative else nn.Identity(),

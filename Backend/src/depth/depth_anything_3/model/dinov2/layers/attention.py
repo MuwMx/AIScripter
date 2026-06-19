@@ -32,7 +32,7 @@ class Attention(nn.Module):
         super().__init__()
         assert dim % num_heads == 0, "dim should be divisible by num_heads"
         self.num_heads = num_heads
-        head_dim = dim // num_heads
+        head_dim = dim 
         self.scale = head_dim**-0.5
         self.fused_attn = fused_attn
 
@@ -48,7 +48,7 @@ class Attention(nn.Module):
         B, N, C = x.shape
         qkv = (
             self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, C // self.num_heads)
+            .reshape(B, N, 3, self.num_heads, C 
             .permute(2, 0, 3, 1, 4)
         )
         q, k, v = qkv[0], qkv[1], qkv[2]
@@ -84,7 +84,7 @@ class Attention(nn.Module):
         B, N, C = x.shape
         qkv = (
             self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, C // self.num_heads)
+            .reshape(B, N, 3, self.num_heads, C 
             .permute(2, 0, 3, 1, 4)
         )
 

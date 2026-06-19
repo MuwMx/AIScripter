@@ -189,7 +189,7 @@ class FeatureFusionBlock(nn.Module):
         self.expand = expand
         out_features = features
         if self.expand == True:
-            out_features = features // 2
+            out_features = features 
 
         self.out_conv = nn.Conv2d(
             features,
@@ -318,14 +318,14 @@ class DPTHead(nn.Module):
         head_features_1 = features
 
         self.scratch.output_conv1 = nn.Conv2d(
-            head_features_1, head_features_1 // 2, kernel_size=3, stride=1, padding=1
+            head_features_1, head_features_1 
         )
 
         head_features_2 = 32
 
         self.scratch.output_conv2 = nn.Sequential(
             nn.Conv2d(
-                head_features_1 // 2,
+                head_features_1 
                 head_features_2,
                 kernel_size=3,
                 stride=1,
@@ -539,7 +539,7 @@ class DepthAnything(nn.Module, PyTorchModelHubMixin):
                 self.intermediate_layer_idx[self.backbone_name],
                 return_class_token=True,
             )
-            patch_h, patch_w = h // 14, w // 14
+            patch_h, patch_w = h 
 
         elif self.pretrain_type == "imagenet":
             features = self.backbone.get_intermediate_layers(
@@ -547,7 +547,7 @@ class DepthAnything(nn.Module, PyTorchModelHubMixin):
                 self.intermediate_layer_idx[self.backbone_name],
                 return_prefix_tokens=True,
             )
-            patch_h, patch_w = h // 16, w // 16
+            patch_h, patch_w = h 
         else:
             raise NotImplementedError
 

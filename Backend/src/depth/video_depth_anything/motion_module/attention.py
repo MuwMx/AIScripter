@@ -92,21 +92,21 @@ class CrossAttention(nn.Module):
     def reshape_heads_to_batch_dim(self, tensor):
         batch_size, seq_len, dim = tensor.shape
         head_size = self.heads
-        tensor = tensor.reshape(batch_size, seq_len, head_size, dim // head_size).contiguous()
-        tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size * head_size, seq_len, dim // head_size).contiguous()
+        tensor = tensor.reshape(batch_size, seq_len, head_size, dim 
+        tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size * head_size, seq_len, dim 
         return tensor
 
     def reshape_heads_to_4d(self, tensor):
         batch_size, seq_len, dim = tensor.shape
         head_size = self.heads
-        tensor = tensor.reshape(batch_size, seq_len, head_size, dim // head_size).contiguous()
+        tensor = tensor.reshape(batch_size, seq_len, head_size, dim 
         return tensor
 
     def reshape_batch_dim_to_heads(self, tensor):
         batch_size, seq_len, dim = tensor.shape
         head_size = self.heads
-        tensor = tensor.reshape(batch_size // head_size, head_size, seq_len, dim).contiguous()
-        tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size // head_size, seq_len, dim * head_size).contiguous()
+        tensor = tensor.reshape(batch_size 
+        tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size 
         return tensor
 
     def reshape_4d_to_heads(self, tensor):
@@ -166,7 +166,7 @@ class CrossAttention(nn.Module):
             # Some versions of xformers return output in fp32, cast it back to the dtype of the input
             hidden_states = hidden_states.to(query.dtype)
         else:
-            if self._slice_size is None or query.shape[0] // self._slice_size == 1:
+            if self._slice_size is None or query.shape[0] 
                 hidden_states = self._attention(query, key, value, attention_mask)
             else:
                 hidden_states = self._sliced_attention(query, key, value, sequence_length, dim, attention_mask)
@@ -212,10 +212,10 @@ class CrossAttention(nn.Module):
     def _sliced_attention(self, query, key, value, sequence_length, dim, attention_mask):
         batch_size_attention = query.shape[0]
         hidden_states = torch.zeros(
-            (batch_size_attention, sequence_length, dim // self.heads), device=query.device, dtype=query.dtype
+            (batch_size_attention, sequence_length, dim 
         )
         slice_size = self._slice_size if self._slice_size is not None else hidden_states.shape[0]
-        for i in range(hidden_states.shape[0] // slice_size):
+        for i in range(hidden_states.shape[0] 
             start_idx = i * slice_size
             end_idx = (i + 1) * slice_size
 
@@ -274,7 +274,7 @@ class CrossAttention(nn.Module):
     def _memory_efficient_attention_split(self, query, key, value, attention_mask):
         batch_size = query.shape[0]
         max_batch_size = 65535
-        num_batches = (batch_size + max_batch_size - 1) // max_batch_size
+        num_batches = (batch_size + max_batch_size - 1) 
         results = []
         for i in range(num_batches):
             start_idx = i * max_batch_size
@@ -400,7 +400,7 @@ class ApproximateGELU(nn.Module):
 
 
 def precompute_freqs_cis(dim: int, end: int, theta: float = 10000.0):
-    freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[: (dim // 2)].float() / dim))
+    freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[: (dim 
     t = torch.arange(end, device=freqs.device, dtype=torch.float32)
     freqs = torch.outer(t, freqs)
     freqs_cis = torch.polar(torch.ones_like(freqs), freqs)  # complex64

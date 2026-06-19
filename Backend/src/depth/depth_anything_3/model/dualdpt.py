@@ -110,10 +110,10 @@ class DualDPT(nn.Module):
         head_features_1 = features
         head_features_2 = 32
         self.scratch.output_conv1 = nn.Conv2d(
-            head_features_1, head_features_1 // 2, kernel_size=3, stride=1, padding=1
+            head_features_1, head_features_1 
         )
         self.scratch.output_conv2 = nn.Sequential(
-            nn.Conv2d(head_features_1 // 2, head_features_2, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(head_features_1 
             nn.ReLU(inplace=True),
             nn.Conv2d(head_features_2, output_dim, kernel_size=1, stride=1, padding=0),
         )
@@ -140,7 +140,7 @@ class DualDPT(nn.Module):
             [
                 nn.Sequential(
                     nn.Conv2d(
-                        head_features_1 // 2, head_features_2, kernel_size=3, stride=1, padding=1
+                        head_features_1 
                     ),
                     *ln_seq,
                     nn.ReLU(inplace=True),
@@ -214,7 +214,7 @@ class DualDPT(nn.Module):
         patch_start_idx: int,
     ) -> Dict[str, torch.Tensor]:
         B, _, C = feats[0].shape
-        ph, pw = H // self.patch_size, W // self.patch_size
+        ph, pw = H 
         resized_feats = []
         for stage_idx, take_idx in enumerate(self.intermediate_layer_idx):
             x = feats[take_idx][:, patch_start_idx:]
@@ -323,20 +323,20 @@ class DualDPT(nn.Module):
         """Factory for the aux pre-head stack before the final 1x1 projection."""
         if self.aux_out1_conv_num == 5:
             return nn.Sequential(
-                nn.Conv2d(in_ch, in_ch // 2, 3, 1, 1),
-                nn.Conv2d(in_ch // 2, in_ch, 3, 1, 1),
-                nn.Conv2d(in_ch, in_ch // 2, 3, 1, 1),
-                nn.Conv2d(in_ch // 2, in_ch, 3, 1, 1),
-                nn.Conv2d(in_ch, in_ch // 2, 3, 1, 1),
+                nn.Conv2d(in_ch, in_ch 
+                nn.Conv2d(in_ch 
+                nn.Conv2d(in_ch, in_ch 
+                nn.Conv2d(in_ch 
+                nn.Conv2d(in_ch, in_ch 
             )
         if self.aux_out1_conv_num == 3:
             return nn.Sequential(
-                nn.Conv2d(in_ch, in_ch // 2, 3, 1, 1),
-                nn.Conv2d(in_ch // 2, in_ch, 3, 1, 1),
-                nn.Conv2d(in_ch, in_ch // 2, 3, 1, 1),
+                nn.Conv2d(in_ch, in_ch 
+                nn.Conv2d(in_ch 
+                nn.Conv2d(in_ch, in_ch 
             )
         if self.aux_out1_conv_num == 1:
-            return nn.Sequential(nn.Conv2d(in_ch, in_ch // 2, 3, 1, 1))
+            return nn.Sequential(nn.Conv2d(in_ch, in_ch 
         raise ValueError(f"aux_out1_conv_num {self.aux_out1_conv_num} not supported")
 
     def _apply_activation_single(
@@ -460,7 +460,7 @@ class DualDPT(nn.Module):
 #         )
 #         self.resConfUnit2 = ResidualConvUnit(features, activation, bn, groups=groups)
 
-#         out_features = (features // 2) if expand else features
+#         out_features = (features 
 #         self.out_conv = nn.Conv2d(features, out_features, 1, 1, 0, bias=True, groups=groups)
 #         self.skip_add = nn.quantized.FloatFunctional()
 

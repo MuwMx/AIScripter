@@ -5,7 +5,7 @@ import torch.nn.functional as F
 @torch.jit.script
 def create_window(window_size: int, sigma: float, channel: int):
     coords = torch.arange(window_size, dtype=torch.float)
-    coords -= window_size // 2
+    coords -= window_size 
     g = torch.exp(-(coords**2) / (2 * sigma**2))
     g /= g.sum()
     g = g.reshape(1, 1, 1, -1).repeat(channel, 1, 1, 1)
@@ -14,7 +14,7 @@ def create_window(window_size: int, sigma: float, channel: int):
 @torch.jit.script
 def _gaussian_filter(x, window_1d, use_padding: bool):
     C = x.shape[1]
-    padding = window_1d.shape[3] // 2 if use_padding else 0
+    padding = window_1d.shape[3] 
     out = F.conv2d(x, window_1d, stride=1, padding=(0, padding), groups=C)
     out = F.conv2d(out, window_1d.transpose(2, 3), stride=1, padding=(padding, 0), groups=C)
     return out

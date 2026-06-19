@@ -1,4 +1,4 @@
-/* Переменные Material 3 Dynamic Colors */
+
 :root {
     --md-sys-color-background: #111318;
     --md-sys-color-surface: #1a1c22;
@@ -21,7 +21,7 @@ body {
     user-select: none;
 }
 
-/* Карточки инструментов */
+
 .m3-card {
     background: var(--md-sys-color-surface);
     border-radius: var(--radius-large);
@@ -38,13 +38,13 @@ body {
     color: var(--md-sys-color-primary);
 }
 
-/* Кнопки */
+
 .m3-btn {
     background: var(--md-sys-color-primary);
     color: var(--md-sys-color-on-primary);
     border: none;
     padding: 12px 24px;
-    border-radius: 100px; /* Полностью круглые края M3 */
+    border-radius: 100px; 
     font-weight: 600;
     font-size: 14px;
     width: 100%;
@@ -57,7 +57,7 @@ body {
 .m3-btn:active { filter: brightness(0.9); }
 .m3-btn:disabled { background: var(--md-sys-color-surface-variant); color: #888; cursor: not-allowed; }
 
-/* Элементы управления (Слайдеры и Селекты) */
+
 .control-row {
     display: flex;
     justify-content: space-between;
@@ -97,7 +97,7 @@ body {
     cursor: pointer;
 }
 
-/* Прогресс-бар и статус */
+
 #status-container {
     background: var(--md-sys-color-surface);
     border-radius: var(--radius-medium);

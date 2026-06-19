@@ -117,7 +117,7 @@ STDTENSOR = (
 def calculateAspectRatio(width, height, depthQuality="high", isV3=False):
     if isV3:
         if depthQuality == "high":
-            return ((max(width, height) + 13) // 14) * 14
+            return ((max(width, height) + 13) 
         if depthQuality == "medium":
             return 700
         return 518
@@ -125,8 +125,8 @@ def calculateAspectRatio(width, height, depthQuality="high", isV3=False):
     if depthQuality == "high":
         # Whilst this doesn't necessarily allign with the model, it produces
         # sharper results at the cost of performance and some accuracy loss.
-        newHeight = ((height + 13) // 14) * 14
-        newWidth = ((width + 13) // 14) * 14
+        newHeight = ((height + 13) 
+        newWidth = ((width + 13) 
     else:
         # I'd suggest 700px as a good middle ground for resizing
         size = 700 if depthQuality == "medium" else 518

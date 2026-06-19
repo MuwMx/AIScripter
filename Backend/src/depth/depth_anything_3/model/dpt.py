@@ -126,7 +126,7 @@ class DPT(nn.Module):
         head_features_1 = features
         head_features_2 = 32
         self.scratch.output_conv1 = nn.Conv2d(
-            head_features_1, head_features_1 // 2, kernel_size=3, stride=1, padding=1
+            head_features_1, head_features_1 
         )
 
         ln_seq = (
@@ -137,7 +137,7 @@ class DPT(nn.Module):
 
         # Main head
         self.scratch.output_conv2 = nn.Sequential(
-            nn.Conv2d(head_features_1 // 2, head_features_2, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(head_features_1 
             *ln_seq,
             nn.ReLU(inplace=True),
             nn.Conv2d(head_features_2, output_dim, kernel_size=1, stride=1, padding=0),
@@ -147,7 +147,7 @@ class DPT(nn.Module):
         if self.use_sky_head:
             self.scratch.sky_output_conv2 = nn.Sequential(
                 nn.Conv2d(
-                    head_features_1 // 2, head_features_2, kernel_size=3, stride=1, padding=1
+                    head_features_1 
                 ),
                 *ln_seq,
                 nn.ReLU(inplace=True),
@@ -213,7 +213,7 @@ class DPT(nn.Module):
         patch_start_idx: int,
     ) -> TyDict[str, torch.Tensor]:
         B, _, C = feats[0].shape
-        ph, pw = H // self.patch_size, W // self.patch_size
+        ph, pw = H 
         resized_feats = []
         for stage_idx, take_idx in enumerate(self.intermediate_layer_idx):
             x = feats[take_idx][:, patch_start_idx:]  # [B*S, N_patch, C]
@@ -430,7 +430,7 @@ class FeatureFusionBlock(nn.Module):
         )
         self.resConfUnit2 = ResidualConvUnit(features, activation, bn, groups=groups)
 
-        out_features = (features // 2) if expand else features
+        out_features = (features 
         self.out_conv = nn.Conv2d(features, out_features, 1, 1, 0, bias=True, groups=groups)
         self.skip_add = nn.quantized.FloatFunctional()
 

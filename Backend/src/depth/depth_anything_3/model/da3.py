@@ -95,8 +95,8 @@ class DepthAnything3Net(nn.Module):
             aux_features[f"feat_layer_{feat_layer}"] = feat.reshape(
                 feat.shape[0],
                 feat.shape[1],
-                height // self.PATCH_SIZE,
-                width // self.PATCH_SIZE,
+                height 
+                width 
                 feat.shape[-1],
             )
         return aux_features

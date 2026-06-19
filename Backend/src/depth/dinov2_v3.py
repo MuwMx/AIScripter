@@ -60,7 +60,7 @@ class AttentionNorm(nn.Module):
     ):
         super().__init__()
         self.num_heads = num_heads
-        head_dim = dim // num_heads
+        head_dim = dim 
         self.scale = head_dim**-0.5
         self.qknorm = qknorm
 
@@ -77,7 +77,7 @@ class AttentionNorm(nn.Module):
         B, N, C = x.shape
         qkv = (
             self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, C // self.num_heads)
+            .reshape(B, N, 3, self.num_heads, C 
             .permute(2, 0, 3, 1, 4)
         )
         q, k, v = qkv[0], qkv[1], qkv[2]
@@ -106,7 +106,7 @@ class MemEffAttentionNorm(MemEffAttention):
             # But standard DINOv2 MemEff doesn't expose it in __init__ easily?
             # Actually, standard DINOv2 MemEff init: dim, num_heads, qkv_bias, etc.
             # We need to know head_dim.
-            # In dinov2_layers.py usually head_dim = dim // num_heads
+            # In dinov2_layers.py usually head_dim = dim 
 
             # Let's check how to get dim from args if it's passed directly
             # args[0] is typically dim
@@ -114,7 +114,7 @@ class MemEffAttentionNorm(MemEffAttention):
             num_heads = kwargs.get(
                 "num_heads", args[1] if len(args) > 1 else self.num_heads
             )
-            head_dim = dim // num_heads
+            head_dim = dim 
 
             self.q_norm = nn.LayerNorm(head_dim)
             self.k_norm = nn.LayerNorm(head_dim)
@@ -129,7 +129,7 @@ class MemEffAttentionNorm(MemEffAttention):
         B, N, C = x.shape
         qkv = (
             self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, C // self.num_heads)
+            .reshape(B, N, 3, self.num_heads, C 
             .permute(2, 0, 3, 1, 4)
         )
         q, k, v = qkv[0], qkv[1], qkv[2]
@@ -314,8 +314,8 @@ class DinoVisionTransformerV3(nn.Module):
         class_pos_embed = pos_embed[:, 0]
         patch_pos_embed = pos_embed[:, 1:]
         dim = x.shape[-1]
-        w0 = w // self.patch_size
-        h0 = h // self.patch_size
+        w0 = w 
+        h0 = h 
         w0, h0 = w0 + self.interpolate_offset, h0 + self.interpolate_offset
 
         sqrt_N = math.sqrt(N)
@@ -400,7 +400,7 @@ class DinoVisionTransformerV3(nn.Module):
         if reshape:
             B, _, w, h = x.shape
             outputs = [
-                out.reshape(B, w // self.patch_size, h // self.patch_size, -1)
+                out.reshape(B, w 
                 .permute(0, 3, 1, 2)
                 .contiguous()
                 for out in outputs

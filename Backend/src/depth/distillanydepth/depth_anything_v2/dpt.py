@@ -138,9 +138,9 @@ class DPTHead(nn.Module):
         head_features_1 = features
         head_features_2 = 32
         
-        self.scratch.output_conv1 = nn.Conv2d(head_features_1, head_features_1 // 2, kernel_size=3, stride=1, padding=1)
+        self.scratch.output_conv1 = nn.Conv2d(head_features_1, head_features_1 
         self.scratch.output_conv2 = nn.Sequential(
-            nn.Conv2d(head_features_1 // 2, head_features_2, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(head_features_1 
             nn.ReLU(True),
             nn.Conv2d(head_features_2, 1, kernel_size=1, stride=1, padding=0),
             nn.ReLU(True),
@@ -210,7 +210,7 @@ class DepthAnythingV2(nn.Module, PyTorchModelHubMixin):
     def forward(self, x):
         bs, _, h, w = x.shape
 
-        patch_h, patch_w = x.shape[-2] // 14, x.shape[-1] // 14
+        patch_h, patch_w = x.shape[-2] 
         
         features = self.pretrained.get_intermediate_layers(x, self.intermediate_layer_idx[self.encoder], return_class_token=True)
         # features_output = self.proj(features[3][0])

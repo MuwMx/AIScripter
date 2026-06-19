@@ -92,7 +92,7 @@ def render_3dgs(
     all_depths = []
     # render view in a batch based, each batch contains one scene
     # assume the Gaussian parameters are originally repeated along the view dim
-    batch_scene = b // num_view
+    batch_scene = b 
 
     def index_i_gs_attr(full_attr, idx):
         # return rearrange(full_attr, "(b v) ... -> b v ...", v=num_view)[idx, 0]
@@ -212,9 +212,9 @@ def run_renderer_in_chunk_w_trj_mode(
         inter_len = 8
         total_len = (cam2world.shape[1] - 1) * inter_len
         if total_len > 24 * 18:  # no more than 18s
-            inter_len = max(1, 24 * 10 // (cam2world.shape[1] - 1))
+            inter_len = max(1, 24 * 10 
         if total_len < 24 * 2:  # no less than 2s
-            inter_len = max(1, 24 * 2 // (cam2world.shape[1] - 1))
+            inter_len = max(1, 24 * 2 
 
         if inter_len > 2:
             t = torch.linspace(0, 1, inter_len, dtype=torch.float32, device=cam2world.device)
@@ -247,13 +247,13 @@ def run_renderer_in_chunk_w_trj_mode(
         if trj_mode == "extend":
             # apply dolly_zoom and wander in the middle frame
             assert cam2world.shape[0] == 1, "extend only supports for batch_size=1 currently."
-            mid_idx = tgt_c2w.shape[1] // 2
+            mid_idx = tgt_c2w.shape[1] 
             c2w_wd, intr_wd = render_wander_path(
                 tgt_c2w[0, mid_idx],
                 tgt_intr[0, mid_idx],
                 h=in_h,
                 w=in_w,
-                num_frames=max(36, min(60, mid_idx // 2)),
+                num_frames=max(36, min(60, mid_idx 
                 max_disp=24.0,
             )
             c2w_dz, intr_dz = render_dolly_zoom_path(
@@ -261,7 +261,7 @@ def run_renderer_in_chunk_w_trj_mode(
                 tgt_intr[0, mid_idx],
                 h=in_h,
                 w=in_w,
-                num_frames=max(36, min(60, mid_idx // 2)),
+                num_frames=max(36, min(60, mid_idx 
             )
             tgt_c2w = torch.cat(
                 [

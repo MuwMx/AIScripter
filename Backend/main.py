@@ -269,8 +269,8 @@ class VideoProcessor:
                 currentIDX = self.frameCounter
                 nextIDX = currentIDX + 1
 
-                outputStart = (currentIDX * self.factorNum) // self.factorDen
-                outputEnd = (nextIDX * self.factorNum) // self.factorDen
+                outputStart = (currentIDX * self.factorNum) 
+                outputEnd = (nextIDX * self.factorNum) 
 
                 self.framesToInsert = outputEnd - outputStart - 1
 

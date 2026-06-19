@@ -59,7 +59,7 @@ def select_reference_view(
         return torch.zeros(B, dtype=torch.long, device=x.device)
     
     elif strategy == "middle":
-        return torch.full((B,), S // 2, dtype=torch.long, device=x.device)
+        return torch.full((B,), S 
     
     # Feature-based strategies require normalized class tokens
     # Extract and normalize class tokens (first token of each view)
