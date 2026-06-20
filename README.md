@@ -8,9 +8,9 @@ AIScripter is a production-ready, high-performance monorepository that integrate
 
 ### Adobe After Effects Integration (Modules & Panels)
 <p align="center">
-  <video src="media/ae_rife_dedup.mp4" width="32%" autoplay loop muted playsinline title="RIFE 4.6 & SSIM Deduplication"></video>
-  <video src="media/ae_depthmap.mp4" width="32%" autoplay loop muted playsinline title="Depth Anything V2 Map"></video>
-  <video src="media/ae_bg_removal.mp4" width="32%" autoplay loop muted playsinline title="BiRefNet Background Removal"></video>
+  <video src="https://github.com/user-attachments/assets/6be161b0-284f-4cdd-938f-790b84ee66b3" width="32%" autoplay loop muted playsinline title="RIFE 4.6 & SSIM Deduplication"></video>
+  <video src="https://github.com/user-attachments/assets/affba898-42d5-41e1-869c-4a049063cc09" width="32%" autoplay loop muted playsinline title="Depth Anything V2 Map"></video>
+  <video src="https://github.com/user-attachments/assets/f2725847-515d-4ee8-9808-671dcf549751" width="32%" autoplay loop muted playsinline title="BiRefNet Background Removal"></video>
 </p>
 <p align="center">
   <em>From left to right: 1. RIFE 4.6 & SSIM Deduplication Pipeline, 2. Depth Anything V2 Map Generation, 3. BiRefNet Background Removal (ProRes 4444 + Alpha).</em>
@@ -18,7 +18,7 @@ AIScripter is a production-ready, high-performance monorepository that integrate
 
 ### Blackmagic Design DaVinci Resolve Workflow
 <p align="center">
-  <video src="media/davinci_pipeline.mp4" width="75%" autoplay loop muted playsinline title="DaVinci Resolve Core App Pipeline"></video>
+  <video src="https://github.com/user-attachments/assets/1ae98204-00a2-437e-91be-13eacfaa004a" width="75%" autoplay loop muted playsinline title="DaVinci Resolve Core App Pipeline"></video>
 </p>
 <p align="center">
   <em>Standalone PySide6 application processing standalone files with full RIFE interpolation and SSIM video deduplication support.</em>
@@ -53,43 +53,37 @@ AIScripter/
 ├── install.bat            # Dynamic components installer script
 └── README.md
 
+```
+---
 
+## 💻 System Requirements
 
-💻 System Requirements
+* **OS:** Windows 10 / 11 (64-bit)
+* **Host Applications:**
+  * Adobe After Effects (with CEP extensions support)
+  * Blackmagic Design DaVinci Resolve
+* **Hardware:** NVIDIA GPU with CUDA support recommended for optimal AI processing speeds.
 
-    OS: Windows 10 / 11 (64-bit)
+---
 
-    Host Applications:
-
-        Adobe After Effects (with CEP extensions support)
-
-        Blackmagic Design DaVinci Resolve
-
-    Hardware: NVIDIA GPU with CUDA support recommended for optimal AI processing speeds.
-
-🔧 Installation & Deployment
+## 🔧 Installation & Deployment
 
 The repository uses an automated installation script that dynamically sets up the environment from official distribution networks to keep the initial footprint lightweight.
 
-    Clone or download this monorepository to your local machine.
+1. Clone or download this monorepository to your local machine.
+2. Run `install.bat` as **Administrator**.
+3. Select your deployment strategy from the interactive menu:
+   * **Full Pipeline:** Deploys both host interfaces and initializes the core.
+   * **After Effects Only:** Installs the Adobe CEP extension panel.
+   * **DaVinci Resolve Only:** Sets up the Python PySide6 standalone app wrapper.
 
-    Run install.bat as Administrator.
+The installer automatically downloads an isolated, portable instance of Python embeddable package, deploys `pip`, installs all necessary production-ready libraries (`torch`, `transformers`, `opencv`), pulls optimized static builds of `FFmpeg`/`FFprobe`, and maps everything neatly inside `%APPDATA%\MyScripterAE`.
 
-    Select your deployment strategy from the interactive menu:
+---
 
-        Full Pipeline: Deploys both host interfaces and initializes the core.
+## 🛠️ Tech Stack
 
-        After Effects Only: Installs the Adobe CEP extension panel.
-
-        DaVinci Resolve Only: Sets up the Python PySide6 standalone app wrapper.
-
-The installer automatically downloads an isolated, portable instance of Python embeddable package, deploys pip, installs all necessary production-ready libraries (torch, transformers, opencv), pulls optimized static builds of FFmpeg/FFprobe, and maps everything neatly inside %APPDATA%\MyScripterAE.
-🛠️ Tech Stack
-
-    Frontends: JavaScript (ES6+), ExtendScript, Python (PySide6 / Qt)
-
-    AI Engine Backend: Python 3.13 (Embeddable Edition)
-
-    Core Libraries: PyTorch, Transformers, Kornia, OpenCV, Pathlib
-
-    Media Pipeline: FFmpeg Shared Architecture (ProRes 4444 Alpha, 10-bit HEVC)
+* **Frontends:** JavaScript (ES6+), ExtendScript, Python (PySide6 / Qt)
+* **AI Engine Backend:** Python 3.13 (Embeddable Edition)
+* **Core Libraries:** PyTorch, Transformers, Kornia, OpenCV, Pathlib
+* **Media Pipeline:** FFmpeg Shared Architecture (ProRes 4444 Alpha, 10-bit HEVC)
