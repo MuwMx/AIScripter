@@ -7,14 +7,14 @@ and to improve code readability.
 """
 
 
-WHEREAMIRUNFROM: str = ""  
-SYSTEM: str = ""  
+WHEREAMIRUNFROM: str = ""
+SYSTEM: str = ""
 
 
-FFMPEGPATH: str = ""  
-FFPROBEPATH: str = ""  
-METADATAPATH: str = ""  
+FFMPEGPATH: str = ""
+FFPROBEPATH: str = ""
+METADATAPATH: str = ""
 
 
-ADOBE: bool = False  
-AUDIO: bool = True  
+ADOBE: bool = False
+AUDIO: bool = True

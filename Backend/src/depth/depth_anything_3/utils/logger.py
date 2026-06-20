@@ -47,8 +47,8 @@ class Logger:
             color = COLOR_MAP[level_key]
             msg = " ".join(str(arg) for arg in args)
 
-            
-            
+
+
             tag = level_key
             if tag in ("INFO", "WARN"):
                 tag += " "

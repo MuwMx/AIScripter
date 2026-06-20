@@ -60,7 +60,7 @@ class DualDPT(nn.Module):
     ) -> None:
         super().__init__()
 
-        
+
         self.patch_size = patch_size
         self.activation = activation
         self.conf_activation = conf_activation
@@ -70,20 +70,20 @@ class DualDPT(nn.Module):
         self.aux_levels = aux_pyramid_levels
         self.aux_out1_conv_num = aux_out1_conv_num
 
-        
+
         self.head_main, self.head_aux = head_names
 
-        
+
         self.intermediate_layer_idx: Tuple[int, int, int, int] = (0, 1, 2, 3)
 
-        
+
         self.norm = nn.LayerNorm(dim_in)
         self.projects = nn.ModuleList(
             [nn.Conv2d(dim_in, oc, kernel_size=1, stride=1, padding=0) for oc in out_channels]
         )
 
-        
-        
+
+
         self.resize_layers = nn.ModuleList(
             [
                 nn.ConvTranspose2d(
@@ -97,16 +97,16 @@ class DualDPT(nn.Module):
             ]
         )
 
-        
+
         self.scratch = _make_scratch(list(out_channels), features, expand=False)
 
-        
+
         self.scratch.refinenet1 = _make_fusion_block(features)
         self.scratch.refinenet2 = _make_fusion_block(features)
         self.scratch.refinenet3 = _make_fusion_block(features)
         self.scratch.refinenet4 = _make_fusion_block(features, has_residual=False)
 
-        
+
         head_features_1 = features
         head_features_2 = 32
         self.scratch.output_conv1 = nn.Conv2d(
@@ -118,18 +118,18 @@ class DualDPT(nn.Module):
             nn.Conv2d(head_features_2, output_dim, kernel_size=1, stride=1, padding=0),
         )
 
-        
+
         self.scratch.refinenet1_aux = _make_fusion_block(features)
         self.scratch.refinenet2_aux = _make_fusion_block(features)
         self.scratch.refinenet3_aux = _make_fusion_block(features)
         self.scratch.refinenet4_aux = _make_fusion_block(features, has_residual=False)
 
-        
+
         self.scratch.output_conv1_aux = nn.ModuleList(
             [self._make_aux_out1_block(head_features_1) for _ in range(self.aux_levels)]
         )
 
-        
+
         use_ln = True
         ln_seq = (
             [Permute((0, 2, 3, 1)), nn.LayerNorm(head_features_2), Permute((0, 3, 1, 2))]
@@ -150,9 +150,9 @@ class DualDPT(nn.Module):
             ]
         )
 
-    
-    
-    
+
+
+
 
     def forward(
         self,
@@ -202,9 +202,9 @@ class DualDPT(nn.Module):
         out_dict = {k: v.view(B, S, *v.shape[1:]) for k, v in out_dict.items()}
         return Dict(out_dict)
 
-    
-    
-    
+
+
+
 
     def _forward_impl(
         self,
@@ -219,18 +219,18 @@ class DualDPT(nn.Module):
         for stage_idx, take_idx in enumerate(self.intermediate_layer_idx):
             x = feats[take_idx][:, patch_start_idx:]
             x = self.norm(x)
-            x = x.permute(0, 2, 1).reshape(B, C, ph, pw)  
+            x = x.permute(0, 2, 1).reshape(B, C, ph, pw)
 
             x = self.projects[stage_idx](x)
             if self.pos_embed:
                 x = self._add_pos_embed(x, W, H)
-            x = self.resize_layers[stage_idx](x)  
+            x = self.resize_layers[stage_idx](x)
             resized_feats.append(x)
 
-        
+
         fused_main, fused_aux_pyr = self._fuse(resized_feats)
 
-        
+
         h_out = int(ph * self.patch_size / self.down_ratio)
         w_out = int(pw * self.patch_size / self.down_ratio)
 
@@ -240,19 +240,19 @@ class DualDPT(nn.Module):
         if self.pos_embed:
             fused_main = self._add_pos_embed(fused_main, W, H)
 
-        
-        
+
+
         main_logits = self.scratch.output_conv2(fused_main)
         fmap = main_logits.permute(0, 2, 3, 1)
         main_pred = self._apply_activation_single(fmap[..., :-1], self.activation)
         main_conf = self._apply_activation_single(fmap[..., -1], self.conf_activation)
 
-        
+
         last_aux = fused_aux_pyr[-1]
         if self.pos_embed:
             last_aux = self._add_pos_embed(last_aux, W, H)
-        
-        
+
+
         last_aux_logits = self.scratch.output_conv2_aux[-1](last_aux)
         fmap_last = last_aux_logits.permute(0, 2, 3, 1)
         aux_pred = self._apply_activation_single(fmap_last[..., :-1], "linear")
@@ -264,9 +264,9 @@ class DualDPT(nn.Module):
             f"{self.head_aux}_conf": aux_conf,
         }
 
-    
-    
-    
+
+
+
 
     def _fuse(self, feats: List[torch.Tensor]) -> Tuple[torch.Tensor, List[torch.Tensor]]:
         """
@@ -282,26 +282,26 @@ class DualDPT(nn.Module):
         l3_rn = self.scratch.layer3_rn(l3)
         l4_rn = self.scratch.layer4_rn(l4)
 
-        
+
         out = self.scratch.refinenet4(l4_rn, size=l3_rn.shape[2:])
         aux_out = self.scratch.refinenet4_aux(l4_rn, size=l3_rn.shape[2:])
         aux_list: List[torch.Tensor] = []
         if self.aux_levels >= 4:
             aux_list.append(aux_out)
 
-        
+
         out = self.scratch.refinenet3(out, l3_rn, size=l2_rn.shape[2:])
         aux_out = self.scratch.refinenet3_aux(aux_out, l3_rn, size=l2_rn.shape[2:])
         if self.aux_levels >= 3:
             aux_list.append(aux_out)
 
-        
+
         out = self.scratch.refinenet2(out, l2_rn, size=l1_rn.shape[2:])
         aux_out = self.scratch.refinenet2_aux(aux_out, l2_rn, size=l1_rn.shape[2:])
         if self.aux_levels >= 2:
             aux_list.append(aux_out)
 
-        
+
         out = self.scratch.refinenet1(out, l1_rn)
         aux_out = self.scratch.refinenet1_aux(aux_out, l1_rn)
         aux_list.append(aux_out)
@@ -361,7 +361,7 @@ class DualDPT(nn.Module):
             return torch.nn.functional.softplus(x)
         if act == "tanh":
             return torch.tanh(x)
-        
+
         return x
 
 

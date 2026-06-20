@@ -79,8 +79,8 @@ class ResolveRepository:
 
         file_path = media_pool_item.GetClipProperty("File Path") or ""
         
-        
-        
+
+
         if file_path and not os.path.exists(file_path):
             raise ResolveAPIError(f"Source file path detected but file is missing on disk for clip '{clip_name}': {file_path}")
 
@@ -89,19 +89,19 @@ class ResolveRepository:
         duration_frames = end_frame - start_frame
         source_start_frame = clip.GetLeftOffset()
 
-        
+
         fps_setting = self.project.GetSetting("timelineFrameRate")
         try:
             timeline_fps = float(fps_setting)
         except (ValueError, TypeError):
             raise ResolveAPIError(f"Failed to parse timeline FPS: {fps_setting}")
 
-        
+
         source_fps_str = media_pool_item.GetClipProperty("FPS")
         try:
             source_fps = float(source_fps_str)
         except (ValueError, TypeError):
-            source_fps = timeline_fps  
+            source_fps = timeline_fps
 
         print(f"[REPO DEBUG] Clip Metadata -> Path: {file_path} | Timeline FPS: {timeline_fps} | Source FPS: {source_fps}")
 
@@ -112,8 +112,8 @@ class ResolveRepository:
             "end_frame": end_frame,
             "source_start_frame": source_start_frame,
             "duration_frames": duration_frames,
-            "fps": timeline_fps,    
-            "source_fps": source_fps 
+            "fps": timeline_fps,
+            "source_fps": source_fps
         }
 
     def import_and_replace(self, output_file_path, original_clip_obj, start_frame, duration_frames):
@@ -130,7 +130,7 @@ class ResolveRepository:
         new_media_item = imported_items[0]
         print("[REPO DEBUG] File successfully imported to Media Pool.")
 
-        
+
         try:
             actual_frames_str = new_media_item.GetClipProperty("Frames")
             actual_duration = int(actual_frames_str)
@@ -139,7 +139,7 @@ class ResolveRepository:
             print(f"[REPO WARNING] Failed to get AI file frames: {e}. Falling back to original duration.")
             actual_duration = int(duration_frames)
 
-        
+
         track_count = self.timeline.GetTrackCount("video")
         target_track_index = None
         
@@ -147,15 +147,15 @@ class ResolveRepository:
             items = self.timeline.GetItemListInTrack("video", i)
             if items is not None and len(items) == 0:
                 target_track_index = i
-                print(f"[REPO DEBUG] Reusing empty video track 
+                print(f"[REPO DEBUG] Reusing empty video track #{target_track_index}")
                 break
         
-        
+
         if target_track_index is None:
             if not self.timeline.AddTrack("video"):
                 raise ResolveAPIError("Failed to add a new video track.")
             target_track_index = self.timeline.GetTrackCount("video")
-            print(f"[REPO DEBUG] Created new video track 
+            print(f"[REPO DEBUG] Created new video track #{target_track_index}")
         timeline_start_frame = self.timeline.GetStartFrame()
         
         print(f"[REPO DEBUG] Timeline starts at frame: {timeline_start_frame}")
@@ -173,7 +173,7 @@ class ResolveRepository:
             raise ResolveAPIError("Failed to append the new clip to the timeline.")
 
         print("[REPO DEBUG] Disabling original clip...")
-        
+
         if not original_clip_obj.SetProperty("VideoDisable", True):
             print("[REPO WARNING] Failed to disable the original clip via API. You may need to hide it manually.")
 

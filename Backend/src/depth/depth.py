@@ -123,12 +123,12 @@ def calculateAspectRatio(width, height, depthQuality="high", isV3=False):
         return 518
 
     if depthQuality == "high":
-        
-        
+
+
         newHeight = ((height + 13) // 14) * 14
         newWidth = ((width + 13) // 14) * 14
     else:
-        
+
         size = 700 if depthQuality == "medium" else 518
         newHeight = size
         newWidth = size
@@ -430,7 +430,7 @@ class DepthDirectMLV2:
                 "OpenVINO backend is an experimental feature, please report any issues you encounter.",
                 "yellow",
             )
-            import openvino  
+            import openvino
 
         self.handleModels()
 
@@ -515,16 +515,16 @@ class DepthDirectMLV2:
             self.model = self.ort.InferenceSession(
                 modelPath, providers=["CPUExecutionProvider"]
             )
-        
+
         self.deviceType = "cpu"
         self.device = torch.device(self.deviceType)
 
-        
+
         self.newHeight, self.newWidth = calculateAspectRatio(
             self.width, self.height, self.depthQuality
         )
 
-        
+
         onnxInputs = self.model.get_inputs()
         onnxOutputs = self.model.get_outputs()
         self.inputName = onnxInputs[0].name
@@ -541,7 +541,7 @@ class DepthDirectMLV2:
         self.numpyOutDType = onnxTypeToNumpy(onnxOutputs[0].type)
         self.torchOutDType = onnxTypeToTorch(onnxOutputs[0].type)
 
-        
+
         self.IoBinding = self.model.io_binding()
         self.dummyInput = torch.zeros(
             (1, 3, self.newHeight, self.newWidth),
@@ -553,7 +553,7 @@ class DepthDirectMLV2:
         if out_rank == 3:
             out_shape = (1, self.newHeight, self.newWidth)
         else:
-            
+
             out_shape = (1, 1, self.newHeight, self.newWidth)
 
         self.dummyOutput = torch.zeros(
@@ -1595,7 +1595,7 @@ class OGDepthV2DirectML:
                 "OpenVINO backend is an experimental feature, please report any issues you encounter.",
                 "yellow",
             )
-            import openvino  
+            import openvino
 
         self.handleModels()
 
@@ -1904,7 +1904,7 @@ class VideoDepthAnythingCUDA:
 
 
         self.model = self.model.to(checker.device).eval()
-        
+
         self.device = "cuda" if checker.cudaAvailable else "cpu"
 
     def _resetVideoDepthState(self):
@@ -2024,7 +2024,7 @@ class VideoDepthAnythingTorch:
     def handleModels(self):
         from .video_depth_anything.video_depth_stream import VideoDepthAnything
 
-        
+
         weights_model = self.depth_method.replace("video_", "og_video_")
         self.filename = modelsMap(
             model=weights_model, modelType="pth", half=self.half
@@ -2077,14 +2077,14 @@ class VideoDepthAnythingTorch:
     def processFrame(self, frame):
         """Process a single frame - frame is a PyTorch tensor (C, H, W) or numpy array."""
         try:
-            
+
             if isinstance(frame, torch.Tensor):
-                if frame.dim() == 3:  
+                if frame.dim() == 3:
                     frame = frame.permute(1, 2, 0).cpu().numpy()
-                elif frame.dim() == 4:  
+                elif frame.dim() == 4:
                     frame = frame.squeeze(0).permute(1, 2, 0).cpu().numpy()
             
-            
+
             if frame.dtype != np.uint8:
                 frame = (frame * 255).astype(np.uint8)
             

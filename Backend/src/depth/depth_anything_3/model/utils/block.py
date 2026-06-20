@@ -66,7 +66,7 @@ class Block(nn.Module):
         )
         self.ls2 = LayerScale(dim, init_values=init_values) if init_values else nn.Identity()
 
-        self.sample_drop_ratio = 0.0  
+        self.sample_drop_ratio = 0.0
 
     def forward(self, x: Tensor, pos=None, attn_mask=None) -> Tensor:
         def attn_residual_func(x: Tensor, pos=None, attn_mask=None) -> Tensor:
@@ -75,7 +75,7 @@ class Block(nn.Module):
         def ffn_residual_func(x: Tensor) -> Tensor:
             return self.ls2(self.mlp(self.norm2(x)))
 
-        
+
         x = x + attn_residual_func(x, pos=pos, attn_mask=attn_mask)
         x = x + ffn_residual_func(x)
         return x

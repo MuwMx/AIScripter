@@ -21,7 +21,7 @@ def compute_scale_and_shift(prediction, target, mask, scale_only=False):
 
 
 def compute_scale(prediction, target, mask):
-    
+
     prediction = prediction.astype(np.float32)
     target = target.astype(np.float32)
     mask = mask.astype(np.float32)
@@ -30,7 +30,7 @@ def compute_scale(prediction, target, mask):
     a_01 = np.sum(mask * prediction)
     a_11 = np.sum(mask)
 
-    
+
     b_0 = np.sum(mask * prediction * target)
 
     x_0 = b_0 / (a_00 + 1e-6)
@@ -38,7 +38,7 @@ def compute_scale(prediction, target, mask):
     return x_0
 
 def compute_scale_and_shift_full(prediction, target, mask):
-    
+
     prediction = prediction.astype(np.float32)
     target = target.astype(np.float32)
     mask = mask.astype(np.float32)

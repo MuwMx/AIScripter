@@ -140,7 +140,7 @@ class DPT_DINOv2(nn.Module):
         
         assert encoder in ['vits', 'vitb', 'vitl']
         
-        
+
         if localhub:
             self.pretrained = torch.hub.load('torchhub/facebookresearch_dinov2_main', 'dinov2_{:}14'.format(encoder), source='local', pretrained=False)
         else:

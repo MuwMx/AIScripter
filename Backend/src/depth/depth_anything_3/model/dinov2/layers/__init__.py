@@ -18,7 +18,7 @@ __all__ = [
     SwiGLUFFN,
     SwiGLUFFNFused,
     Block,
-    
+
     LayerScale,
     PositionGetter,
     RotaryPositionEmbedding2D,

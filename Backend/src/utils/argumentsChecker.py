@@ -111,19 +111,19 @@ class DidYouMeanArgumentParser(argparse.ArgumentParser):
         Returns:
             List of suggested valid choices, sorted by similarity
         """
-        
+
         scoredChoices = [
             (choice, self.similarityScore(invalidValue, choice))
             for choice in validChoices
         ]
         
-        
+
         scoredChoices.sort(key=lambda x: (-x[1], len(x[0])))
         
-        
+
         suggestions = []
         for choice, score in scoredChoices:
-            if score > 0.3 and len(suggestions) < maxSuggestions:  
+            if score > 0.3 and len(suggestions) < maxSuggestions:
                 suggestions.append(choice)
         
         return suggestions
@@ -135,7 +135,7 @@ class DidYouMeanArgumentParser(argparse.ArgumentParser):
         Args:
             message: The original error message from argparse
         """
-        
+
         if "invalid choice:" in message and "choose from" in message:
             import re
 
@@ -189,7 +189,7 @@ class DidYouMeanArgumentParser(argparse.ArgumentParser):
                     sys.exit(2)
                     return
         
-        
+
         super().error(message)
 
 
@@ -267,7 +267,7 @@ class TASHelpFormatter(argparse.HelpFormatter):
         groups = self._group_choices([str(c) for c in action.choices])
         lines = []
         if len(groups) == 1:
-            
+
             items_str = ", ".join(list(groups.values())[0])
             lines.append(indent + items_str)
         else:
@@ -294,7 +294,7 @@ class TASHelpFormatter(argparse.HelpFormatter):
     def format_help(self):
         text = super().format_help()
 
-        
+
         if "usage:" not in text.lower():
             return text
 
@@ -329,21 +329,21 @@ class TASHelpFormatter(argparse.HelpFormatter):
         lines = text.split("\n")
         out = []
         for line in lines:
-            
+
             m = re.match(r"^(\s{0,2})([\w][\w /()-]*):(\s*)$", line)
             if m:
                 out.append(f"{m.group(1)}{B}{C}{m.group(2)}{R}")
                 continue
 
-            
+
             line = re.sub(r"^(usage:\s*|Usage:\s*)", f"{B}\\1{R}", line)
 
-            
+
             line = re.sub(r"(--[\w][\w-]*)", f"{G}\\1{R}", line)
-            
+
             line = re.sub(r"(?<=[\s,])(-[a-zA-Z])(?=[\s,\]])", f"{G}\\1{R}", line)
 
-            
+
             line = re.sub(r"(\{[^}]+\})", f"{Y}\\1{R}", line)
 
             out.append(line)
@@ -520,7 +520,7 @@ def createParser(outputPath):
         formatter_class=TASHelpFormatter,
     )
 
-    
+
     generalGroup = argParser.add_argument_group("General")
     generalGroup.add_argument("-v", "--version", action="version", version=__version__)
     generalGroup.add_argument("--input", type=str, help="Input video file")
@@ -540,7 +540,7 @@ def createParser(outputPath):
         help="Path to JSON configuration file with processing options",
     )
 
-    
+
     presetGroup = argParser.add_argument_group("Preset Configuration")
     presetGroup.add_argument(
         "--preset",
@@ -551,7 +551,7 @@ def createParser(outputPath):
         "--list_presets", action="store_true", help="List all available presets"
     )
 
-    
+
     performanceGroup = argParser.add_argument_group("Performance")
     performanceGroup.add_argument(
         "--precision",
@@ -594,34 +594,34 @@ def createParser(outputPath):
         "Both 'max' options disable CudaGraphs, which may reduce performance at lower resolutions.",
     )
 
-    
+
     _addInterpolationOptions(argParser)
 
-    
+
     _addUpscalingOptions(argParser)
 
-    
+
     _addDedupOptions(argParser)
 
-    
+
     _addVideoProcessingOptions(argParser)
 
-    
+
     _addMotionBlurOptions(argParser)
 
-    
+
     _addSegmentationOptions(argParser)
 
-    
+
     _addSceneDetectionOptions(argParser)
 
-    
+
     _addDepthOptions(argParser)
 
-    
+
     _addEncodingOptions(argParser)
 
-    
+
     objectGroup = argParser.add_argument_group("Object Detection")
     objectGroup.add_argument(
         "--obj_detect", action="store_true", help="Detect objects in the video"
@@ -651,7 +651,7 @@ def createParser(outputPath):
         help="Disable class labels and confidence percentages on detection boxes (default: False)",
     )
 
-    
+
     _addMiscOptions(argParser)
 
     args = argParser.parse_args()
@@ -1508,7 +1508,7 @@ def argumentsChecker(args, outputPath, parser):
 
     _configureProcessingSettings(args)
 
-    
+
     _adjustMethodsBasedOnCuda(args)
     _validateCustomUpscaleModel(args)
 
@@ -1783,12 +1783,12 @@ def _configureProcessingSettings(args):
 
     if args.autoclip:
         if args.autoclip_method == "pyscenedetect":
-            
-            
+
+
             args.autoclip_sens = float(100 - args.autoclip_sens)
         else:
-            
-            
+
+
             args.autoclip_sens = float(1.0 - (args.autoclip_sens / 100.0))
         logging.info(
             f"New autoclip sensitivity for {args.autoclip_method} is: {args.autoclip_sens}"

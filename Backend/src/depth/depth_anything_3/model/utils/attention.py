@@ -47,7 +47,7 @@ class Attention(nn.Module):
         self.rope = rope
 
     def forward(self, x: Tensor, pos=None, attn_mask=None) -> Tensor:
-        
+
         B, N, C = x.shape
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
         q, k, v = qkv.unbind(0)

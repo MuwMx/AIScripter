@@ -42,20 +42,20 @@ except ImportError:
 
 
 def render_3dgs(
-    extrinsics: torch.Tensor,  
-    intrinsics: torch.Tensor,  
+    extrinsics: torch.Tensor,
+    intrinsics: torch.Tensor,
     image_shape: tuple[int, int],
     gaussian: Gaussians,
-    background_color: Optional[torch.Tensor] = None,  
+    background_color: Optional[torch.Tensor] = None,
     use_sh: bool = True,
     num_view: int = 1,
     color_mode: Literal["RGB+D", "RGB+ED"] = "RGB+D",
     **kwargs,
 ) -> tuple[
-    torch.Tensor,  
-    torch.Tensor,  
+    torch.Tensor,
+    torch.Tensor,
 ]:
-    
+
     gaussian_means = gaussian.means
     gaussian_scales = gaussian.scales
     gaussian_quats = gaussian.rotations
@@ -72,10 +72,10 @@ def render_3dgs(
         _, _, _, n = gaussian_sh_coefficients.shape
         degree = isqrt(n) - 1
         shs = rearrange(gaussian_sh_coefficients, "b g xyz n -> b g n xyz").contiguous()
-    else:  
+    else:
         shs = (
             gaussian_sh_coefficients.squeeze(-1).sigmoid().contiguous()
-        )  
+        )
 
     h, w = image_shape
 
@@ -90,12 +90,12 @@ def render_3dgs(
     all_images = []
     all_radii = []
     all_depths = []
-    
-    
+
+
     batch_scene = b // num_view
 
     def index_i_gs_attr(full_attr, idx):
-        
+
         return full_attr[idx]
 
     for i in range(batch_scene):
@@ -113,24 +113,24 @@ def render_3dgs(
         K[:, 0, 0] = focal_length_x.reshape(batch_scene, num_view)[i]
         K[:, 1, 1] = focal_length_y.reshape(batch_scene, num_view)[i]
 
-        i_means = index_i_gs_attr(gaussian_means, i)  
+        i_means = index_i_gs_attr(gaussian_means, i)
         i_scales = index_i_gs_attr(gaussian_scales, i)
         i_quats = index_i_gs_attr(gaussian_quats, i)
-        i_opacities = index_i_gs_attr(gaussian_opacities, i)  
-        i_colors = index_i_gs_attr(shs, i)  
-        i_viewmats = rearrange(view_matrix, "(b v) ... -> b v ...", v=num_view)[i]  
+        i_opacities = index_i_gs_attr(gaussian_opacities, i)
+        i_colors = index_i_gs_attr(shs, i)
+        i_viewmats = rearrange(view_matrix, "(b v) ... -> b v ...", v=num_view)[i]
         i_backgrounds = rearrange(background_color, "(b v) ... -> b v ...", v=num_view)[
             i
-        ]  
+        ]
 
         render_colors, render_alphas, info = rasterization(
             means=i_means,
-            quats=i_quats,  
-            scales=i_scales,  
+            quats=i_quats,
+            scales=i_scales,
             opacities=i_opacities,
             colors=i_colors,
-            viewmats=i_viewmats,  
-            Ks=K,  
+            viewmats=i_viewmats,
+            Ks=K,
             backgrounds=i_backgrounds,
             render_mode=color_mode,
             width=w,
@@ -143,7 +143,7 @@ def render_3dgs(
         image = rearrange(render_colors[..., :3], "v h w c -> v c h w").unbind(dim=0)
         radii = info["radii"].unbind(dim=0)
         try:
-            info["means2d"].retain_grad()  
+            info["means2d"].retain_grad()
         except Exception:
             pass
         all_images.extend(image)
@@ -155,8 +155,8 @@ def render_3dgs(
 
 def run_renderer_in_chunk_w_trj_mode(
     gaussians: Gaussians,
-    extrinsics: torch.Tensor,  
-    intrinsics: torch.Tensor,  
+    extrinsics: torch.Tensor,
+    intrinsics: torch.Tensor,
     image_shape: tuple[int, int],
     chunk_size: Optional[int] = 8,
     trj_mode: Literal[
@@ -173,8 +173,8 @@ def run_renderer_in_chunk_w_trj_mode(
     enable_tqdm: Optional[bool] = False,
     **kwargs,
 ) -> tuple[
-    torch.Tensor,  
-    torch.Tensor,  
+    torch.Tensor,
+    torch.Tensor,
 ]:
     cam2world = affine_inverse(as_homogeneous(extrinsics))
     if input_shape is not None:
@@ -201,7 +201,7 @@ def run_renderer_in_chunk_w_trj_mode(
             smooth_c2ws = raw_c2ws
         return smooth_c2ws
 
-    
+
     if trj_mode == "original":
         tgt_c2w = cam2world
         tgt_intr = intr_normed
@@ -211,9 +211,9 @@ def run_renderer_in_chunk_w_trj_mode(
     elif trj_mode in ["interpolate", "interpolate_smooth", "extend"]:
         inter_len = 8
         total_len = (cam2world.shape[1] - 1) * inter_len
-        if total_len > 24 * 18:  
+        if total_len > 24 * 18:
             inter_len = max(1, 24 * 10 // (cam2world.shape[1] - 1))
-        if total_len < 24 * 2:  
+        if total_len < 24 * 2:
             inter_len = max(1, 24 * 2 // (cam2world.shape[1] - 1))
 
         if inter_len > 2:
@@ -237,15 +237,15 @@ def run_renderer_in_chunk_w_trj_mode(
                     )
                 tgt_c2w_b.append(torch.cat(tgt_c2w))
                 tgt_intr_b.append(torch.cat(tgt_intr))
-            tgt_c2w = torch.stack(tgt_c2w_b)  
-            tgt_intr = torch.stack(tgt_intr_b)  
+            tgt_c2w = torch.stack(tgt_c2w_b)
+            tgt_intr = torch.stack(tgt_intr_b)
         else:
             tgt_c2w = cam2world
             tgt_intr = intr_normed
         if trj_mode in ["interpolate_smooth", "extend"]:
             tgt_c2w = _smooth_trj_fn_batch(tgt_c2w)
         if trj_mode == "extend":
-            
+
             assert cam2world.shape[0] == 1, "extend only supports for batch_size=1 currently."
             mid_idx = tgt_c2w.shape[1] // 2
             c2w_wd, intr_wd = render_wander_path(
@@ -325,8 +325,8 @@ def run_renderer_in_chunk_w_trj_mode(
         e = int((chunk_idx + 1) * chunk_size)
         cur_n_view = tgt_extr[:, s:e].shape[1]
         color, depth = render_3dgs(
-            extrinsics=rearrange(tgt_extr[:, s:e], "b v ... -> (b v) ..."),  
-            intrinsics=rearrange(tgt_intr[:, s:e], "b v ... -> (b v) ..."),  
+            extrinsics=rearrange(tgt_extr[:, s:e], "b v ... -> (b v) ..."),
+            intrinsics=rearrange(tgt_intr[:, s:e], "b v ... -> (b v) ..."),
             image_shape=image_shape,
             gaussian=gaussians,
             num_view=cur_n_view,

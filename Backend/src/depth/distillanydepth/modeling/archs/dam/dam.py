@@ -335,8 +335,8 @@ class DPTHead(nn.Module):
             nn.Conv2d(
                 head_features_2, head_out_channels, kernel_size=1, stride=1, padding=0
             ),
-            
-            
+
+
         )
 
     def forward(self, out_features, patch_h, patch_w):
@@ -348,7 +348,7 @@ class DPTHead(nn.Module):
                 x = self.readout_projects[i](torch.cat((x, readout), -1))
             else:
                 x = x[0]
-            
+
             x = x.permute(0, 2, 1).reshape((x.shape[0], x.shape[-1], patch_h, patch_w))
 
             x = self.projects[i](x)
@@ -381,7 +381,7 @@ class DPTHead(nn.Module):
 
 
 class DepthAnything(nn.Module, PyTorchModelHubMixin):
-    
+
     def __init__(
         self,
         encoder="vitl",
@@ -391,13 +391,13 @@ class DepthAnything(nn.Module, PyTorchModelHubMixin):
         wo_relu_1_2_channel=False,
         use_bn=False,
         use_clstoken=False,
-        
+
         use_registers=False,
         max_depth=1.0,
         mode="disparity",
         num_depth_regressor_anchor=512,
         depth_normalize=(0.1, 150),
-        pretrain_type="dinov2",  
+        pretrain_type="dinov2",
         del_mask_token=True,
     ):
         super(DepthAnything, self).__init__()
@@ -435,14 +435,14 @@ class DepthAnything(nn.Module, PyTorchModelHubMixin):
                 else:
                     raise NotImplementedError
 
-                
+
             elif encoder == "vitb":
                 self.backbone = vit_base(checkpoint=None, del_mask_token=del_mask_token)
 
             else:
                 raise NotImplementedError
 
-        
+
         dim = self.backbone.embed_dim
 
         self.min_depth = depth_normalize[0]

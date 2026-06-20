@@ -28,9 +28,9 @@ from src.depth.attr_dict import AttrDict as Dict
 
 
 if platform.system() == 'Windows':
-    import regex as re  
+    import regex as re
 else:
-    import re  
+    import re
 
 BASE_KEY = '_base_'
 DELETE_KEY = '_delete_'
@@ -61,7 +61,7 @@ def digit_version(version_str: str, length: int = 4):
     if version.is_prerelease:
         mapping = {'a': -3, 'b': -2, 'rc': -1}
         val = -4
-        
+
         if version.pre:
             if version.pre[0] not in mapping:
                 warnings.warn(f'unknown prerelease version {version.pre[0]}, '
@@ -73,7 +73,7 @@ def digit_version(version_str: str, length: int = 4):
             release.extend([val, 0])
 
     elif version.is_postrelease:
-        release.extend([1, version.post])  
+        release.extend([1, version.post])
     else:
         release.extend([0, 0])
     return tuple(release)
@@ -197,7 +197,7 @@ class Config:
     @staticmethod
     def _validate_py_syntax(filename):
         with open(filename, encoding='utf-8') as f:
-            
+
             content = f.read()
         try:
             ast.parse(content)
@@ -217,7 +217,7 @@ class Config:
             fileBasenameNoExtension=file_basename_no_extension,
             fileExtname=file_extname)
         with open(filename, encoding='utf-8') as f:
-            
+
             config_file = f.read()
         for key, value in support_templates.items():
             regexp = r'\{\{\s*' + str(key) + r'\s*\}\}'
@@ -231,7 +231,7 @@ class Config:
         """Substitute base variable placehoders to string, so that parsing
         would work."""
         with open(filename, encoding='utf-8') as f:
-            
+
             config_file = f.read()
         base_var_dict = {}
         regexp = r'\{\{\s*' + BASE_KEY + r'\.([\w\.]+)\s*\}\}'
@@ -291,13 +291,13 @@ class Config:
             if platform.system() == 'Windows':
                 temp_config_file.close()
             temp_config_name = osp.basename(temp_config_file.name)
-            
+
             if use_predefined_variables:
                 Config._substitute_predefined_vars(filename,
                                                    temp_config_file.name)
             else:
                 shutil.copyfile(filename, temp_config_file.name)
-            
+
             base_var_dict = Config._pre_substitute_base_vars(
                 temp_config_file.name, temp_config_file.name)
 
@@ -314,15 +314,15 @@ class Config:
                     and not isinstance(value, types.ModuleType)
                     and not isinstance(value, types.FunctionType)
                 }
-                
+
                 del sys.modules[temp_module_name]
             elif filename.endswith(('.yml', '.yaml', '.json')):
                 import mmcv
                 cfg_dict = mmcv.load(temp_config_file.name)
-            
+
             temp_config_file.close()
 
-        
+
         if DEPRECATION_KEY in cfg_dict:
             deprecation_info = cfg_dict.pop(DEPRECATION_KEY)
             warning_msg = f'The config file {filename} will be deprecated ' \
@@ -337,7 +337,7 @@ class Config:
 
         cfg_text = filename + '\n'
         with open(filename, encoding='utf-8') as f:
-            
+
             cfg_text += f.read()
 
         if BASE_KEY in cfg_dict:
@@ -361,14 +361,14 @@ class Config:
                                    f'Duplicate keys: {duplicate_keys}')
                 base_cfg_dict.update(c)
 
-            
+
             cfg_dict = Config._substitute_base_vars(cfg_dict, base_var_dict,
                                                     base_cfg_dict)
 
             base_cfg_dict = Config._merge_a_into_b(cfg_dict, base_cfg_dict)
             cfg_dict = base_cfg_dict
 
-            
+
             cfg_text_list.append(cfg_text)
             cfg_text = '\n'.join(cfg_text_list)
 
@@ -392,17 +392,17 @@ class Config:
             dict: The modified dict of ``b`` using ``a``.
 
         Examples:
-            
+            # Normally merge a into b.
             >>> Config._merge_a_into_b(
             ...     dict(obj=dict(a=2)), dict(obj=dict(a=1)))
             {'obj': {'a': 2}}
 
-            
+            # Delete b first and merge a into b.
             >>> Config._merge_a_into_b(
             ...     dict(obj=dict(_delete_=True, a=2)), dict(obj=dict(a=1)))
             {'obj': {'a': 2}}
 
-            
+            # b is a list
             >>> Config._merge_a_into_b(
             ...     {'0': dict(a=2)}, [dict(a=1), dict(b=2)], True)
             [{'a': 2}, {'b': 2}]
@@ -458,15 +458,15 @@ class Config:
         if file_format not in ['.py', '.json', '.yaml', '.yml']:
             raise OSError('Only py/yml/yaml/json type are supported now!')
         if file_format != '.py' and 'dict(' in cfg_str:
-            
+
             warnings.warn(
                 'Please check "file_format", the file format may be .py')
         with tempfile.NamedTemporaryFile(
                 'w', encoding='utf-8', suffix=file_format,
                 delete=False) as temp_file:
             temp_file.write(cfg_str)
-            
-            
+
+
         cfg = Config.fromfile(temp_file.name)
         os.remove(temp_file.name)
         return cfg
@@ -546,7 +546,7 @@ class Config:
             return attr_str
 
         def _format_list(k, v, use_mapping=False):
-            
+
             if all(isinstance(_, dict) for _ in v):
                 v_str = '[\n'
                 v_str += '\n'.join(
@@ -600,7 +600,7 @@ class Config:
 
         cfg_dict = self._cfg_dict.to_dict()
         text = _format_dict(cfg_dict, outest_level=True)
-        
+
         yapf_style = dict(
             based_on_style='pep8',
             blank_line_before_nested_class_or_def=True,
@@ -715,7 +715,7 @@ class Config:
             >>> assert cfg_dict == dict(
             ...     model=dict(backbone=dict(depth=50, with_cp=True)))
 
-            >>> 
+            >>> # Merge list element
             >>> cfg = Config(dict(pipeline=[
             ...     dict(type='LoadImage'), dict(type='LoadAnnotations')]))
             >>> options = dict(pipeline={'0': dict(type='SelfLoadImage')})
@@ -807,14 +807,14 @@ class DictAction(Action):
             end = len(string)
             for idx, char in enumerate(string):
                 pre = string[:idx]
-                
+
                 if ((char == ',') and (pre.count('(') == pre.count(')'))
                         and (pre.count('[') == pre.count(']'))):
                     end = idx
                     break
             return end
 
-        
+
         val = val.strip('\'\"').replace(' ', '')
         is_tuple = False
         if val.startswith('(') and val.endswith(')'):
@@ -823,7 +823,7 @@ class DictAction(Action):
         elif val.startswith('[') and val.endswith(']'):
             val = val[1:-1]
         elif ',' not in val:
-            
+
             return DictAction._parse_int_float_bool(val)
 
         values = []

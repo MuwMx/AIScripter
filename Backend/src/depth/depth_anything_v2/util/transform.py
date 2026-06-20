@@ -60,34 +60,34 @@ class Resize(object):
         return y
 
     def get_size(self, width, height):
-        
+
         scale_height = self.__height / height
         scale_width = self.__width / width
 
         if self.__keep_aspect_ratio:
             if self.__resize_method == "lower_bound":
-                
+
                 if scale_width > scale_height:
-                    
+
                     scale_height = scale_width
                 else:
-                    
+
                     scale_width = scale_height
             elif self.__resize_method == "upper_bound":
-                
+
                 if scale_width < scale_height:
-                    
+
                     scale_height = scale_width
                 else:
-                    
+
                     scale_width = scale_height
             elif self.__resize_method == "minimal":
-                
+
                 if abs(1 - scale_width) < abs(1 - scale_height):
-                    
+
                     scale_height = scale_width
                 else:
-                    
+
                     scale_width = scale_height
             else:
                 raise ValueError(f"resize_method {self.__resize_method} not implemented")
@@ -109,7 +109,7 @@ class Resize(object):
     def __call__(self, sample):
         width, height = self.get_size(sample["image"].shape[1], sample["image"].shape[0])
         
-        
+
         sample["image"] = cv2.resize(sample["image"], (width, height), interpolation=self.__image_interpolation_method)
 
         if self.__resize_target:

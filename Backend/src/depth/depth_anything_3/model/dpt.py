@@ -37,7 +37,7 @@ class DPT(nn.Module):
       - Main head:
         * If output_dim>1: { head_name, f"{head_name}_conf" }
         * If output_dim==1: { head_name }
-      - Sky head (if use_sky_head=True): { sky_name }  
+      - Sky head (if use_sky_head=True): { sky_name }  # [B, S, 1, H/down_ratio, W/down_ratio]
     """
 
     def __init__(
@@ -53,39 +53,39 @@ class DPT(nn.Module):
         pos_embed: bool = False,
         down_ratio: int = 1,
         head_name: str = "depth",
-        
+
         use_sky_head: bool = True,
         sky_name: str = "sky",
-        sky_activation: str = "relu",  
-        use_ln_for_heads: bool = False,  
-        norm_type: str = "idt",  
+        sky_activation: str = "relu",
+        use_ln_for_heads: bool = False,
+        norm_type: str = "idt",
         fusion_block_inplace: bool = False,
     ) -> None:
         super().__init__()
 
-        
+
         self.patch_size = patch_size
         self.activation = activation
         self.conf_activation = conf_activation
         self.pos_embed = pos_embed
         self.down_ratio = down_ratio
 
-        
+
         self.head_main = head_name
         self.sky_name = sky_name
 
-        
+
         self.out_dim = output_dim
         self.has_conf = output_dim > 1
 
-        
+
         self.use_sky_head = use_sky_head
         self.sky_activation = sky_activation
 
-        
+
         self.intermediate_layer_idx: Tuple[int, int, int, int] = (0, 1, 2, 3)
 
-        
+
         if norm_type == "layer":
             self.norm = nn.LayerNorm(dim_in)
         elif norm_type == "idt":
@@ -96,8 +96,8 @@ class DPT(nn.Module):
             [nn.Conv2d(dim_in, oc, kernel_size=1, stride=1, padding=0) for oc in out_channels]
         )
 
-        
-        
+
+
         self.resize_layers = nn.ModuleList(
             [
                 nn.ConvTranspose2d(
@@ -111,10 +111,10 @@ class DPT(nn.Module):
             ]
         )
 
-        
+
         self.scratch = _make_scratch(list(out_channels), features, expand=False)
 
-        
+
         self.scratch.refinenet1 = _make_fusion_block(features, inplace=fusion_block_inplace)
         self.scratch.refinenet2 = _make_fusion_block(features, inplace=fusion_block_inplace)
         self.scratch.refinenet3 = _make_fusion_block(features, inplace=fusion_block_inplace)
@@ -122,7 +122,7 @@ class DPT(nn.Module):
             features, has_residual=False, inplace=fusion_block_inplace
         )
 
-        
+
         head_features_1 = features
         head_features_2 = 32
         self.scratch.output_conv1 = nn.Conv2d(
@@ -135,7 +135,7 @@ class DPT(nn.Module):
             else []
         )
 
-        
+
         self.scratch.output_conv2 = nn.Sequential(
             nn.Conv2d(head_features_1 // 2, head_features_2, kernel_size=3, stride=1, padding=1),
             *ln_seq,
@@ -143,7 +143,7 @@ class DPT(nn.Module):
             nn.Conv2d(head_features_2, output_dim, kernel_size=1, stride=1, padding=0),
         )
 
-        
+
         if self.use_sky_head:
             self.scratch.sky_output_conv2 = nn.Sequential(
                 nn.Conv2d(
@@ -154,9 +154,9 @@ class DPT(nn.Module):
                 nn.Conv2d(head_features_2, 1, kernel_size=1, stride=1, padding=0),
             )
 
-    
-    
-    
+
+
+
     def forward(
         self,
         feats: List[torch.Tensor],
@@ -179,7 +179,7 @@ class DPT(nn.Module):
         B, S, N, C = feats[0][0].shape
         feats = [feat[0].reshape(B * S, N, C) for feat in feats]
 
-        
+
         extra_kwargs = {}
         if "images" in kwargs:
             extra_kwargs.update({"images": rearrange(kwargs["images"], "B S ... -> (B S) ...")})
@@ -202,9 +202,9 @@ class DPT(nn.Module):
         out_dict = {k: v.view(B, S, *v.shape[1:]) for k, v in out_dict.items()}
         return Dict(out_dict)
 
-    
-    
-    
+
+
+
     def _forward_impl(
         self,
         feats: List[torch.Tensor],
@@ -216,21 +216,21 @@ class DPT(nn.Module):
         ph, pw = H // self.patch_size, W // self.patch_size
         resized_feats = []
         for stage_idx, take_idx in enumerate(self.intermediate_layer_idx):
-            x = feats[take_idx][:, patch_start_idx:]  
+            x = feats[take_idx][:, patch_start_idx:]
             x = self.norm(x)
-            
-            x = x.permute(0, 2, 1).contiguous().reshape(B, C, ph, pw)  
+
+            x = x.permute(0, 2, 1).contiguous().reshape(B, C, ph, pw)
 
             x = self.projects[stage_idx](x)
             if self.pos_embed:
                 x = self._add_pos_embed(x, W, H)
-            x = self.resize_layers[stage_idx](x)  
+            x = self.resize_layers[stage_idx](x)
             resized_feats.append(x)
 
-        
+
         fused = self._fuse(resized_feats)
 
-        
+
         h_out = int(ph * self.patch_size / self.down_ratio)
         w_out = int(pw * self.patch_size / self.down_ratio)
 
@@ -239,10 +239,10 @@ class DPT(nn.Module):
         if self.pos_embed:
             fused = self._add_pos_embed(fused, W, H)
 
-        
+
         feat = fused
 
-        
+
         main_logits = self.scratch.output_conv2(feat)
         outs: TyDict[str, torch.Tensor] = {}
         if self.has_conf:
@@ -256,16 +256,16 @@ class DPT(nn.Module):
                 main_logits, self.activation
             ).squeeze(1)
 
-        
+
         if self.use_sky_head:
             sky_logits = self.scratch.sky_output_conv2(feat)
             outs[self.sky_name] = self._apply_sky_activation(sky_logits).squeeze(1)
 
         return outs
 
-    
-    
-    
+
+
+
     def _fuse(self, feats: List[torch.Tensor]) -> torch.Tensor:
         """
         4-layer top-down fusion, returns finest scale features (after fusion, before neck1).
@@ -277,7 +277,7 @@ class DPT(nn.Module):
         l3_rn = self.scratch.layer3_rn(l3)
         l4_rn = self.scratch.layer4_rn(l4)
 
-        
+
         out = self.scratch.refinenet4(l4_rn, size=l3_rn.shape[2:])
         out = self.scratch.refinenet3(out, l3_rn, size=l2_rn.shape[2:])
         out = self.scratch.refinenet2(out, l2_rn, size=l1_rn.shape[2:])
@@ -306,7 +306,7 @@ class DPT(nn.Module):
             return torch.nn.functional.softplus(x)
         if act == "tanh":
             return torch.tanh(x)
-        
+
         return x
 
     def _apply_sky_activation(self, x: torch.Tensor) -> torch.Tensor:
@@ -325,7 +325,7 @@ class DPT(nn.Module):
             return torch.sigmoid(x)
         if act == "relu":
             return torch.relu(x)
-        
+
         return x
 
     def _add_pos_embed(self, x: torch.Tensor, W: int, H: int, ratio: float = 0.1) -> torch.Tensor:
@@ -364,7 +364,7 @@ def _make_scratch(
     in_shape: List[int], out_shape: int, groups: int = 1, expand: bool = False
 ) -> nn.Module:
     scratch = nn.Module()
-    
+
     c1 = out_shape
     c2 = out_shape * (2 if expand else 1)
     c3 = out_shape * (4 if expand else 1)
@@ -391,7 +391,7 @@ class ResidualConvUnit(nn.Module):
         self.activation = activation
         self.skip_add = nn.quantized.FloatFunctional()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:  
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.activation(x)
         out = self.conv1(out)
         if self.norm1 is not None:
@@ -434,7 +434,7 @@ class FeatureFusionBlock(nn.Module):
         self.out_conv = nn.Conv2d(features, out_features, 1, 1, 0, bias=True, groups=groups)
         self.skip_add = nn.quantized.FloatFunctional()
 
-    def forward(self, *xs: torch.Tensor, size: Tuple[int, int] = None) -> torch.Tensor:  
+    def forward(self, *xs: torch.Tensor, size: Tuple[int, int] = None) -> torch.Tensor:
         """
         xs:
           - xs[0]: Top branch input
@@ -446,7 +446,7 @@ class FeatureFusionBlock(nn.Module):
 
         y = self.resConfUnit2(y)
 
-        
+
         if (size is None) and (self.size is None):
             up_kwargs = {"scale_factor": 2}
         elif size is None:

@@ -53,7 +53,7 @@ class OutputProcessor:
             Prediction: Object containing depth estimation results with shapes:
                        depth (N, H, W), conf (N, H, W), extrinsics (N, 4, 4), intrinsics (N, 3, 3)
         """
-        
+
         depth = self._extract_depth(model_output)
         conf = self._extract_conf(model_output)
         extrinsics = self._extract_extrinsics(model_output)
@@ -85,7 +85,7 @@ class OutputProcessor:
         Returns:
             Depth array with shape (N, H, W)
         """
-        depth = model_output["depth"].squeeze(0).squeeze(-1).cpu().numpy()  
+        depth = model_output["depth"].squeeze(0).squeeze(-1).cpu().numpy()
         return depth
 
     def _extract_conf(self, model_output: dict[str, torch.Tensor]) -> np.ndarray | None:
@@ -100,7 +100,7 @@ class OutputProcessor:
         """
         conf = model_output.get("depth_conf", None)
         if conf is not None:
-            conf = conf.squeeze(0).cpu().numpy()  
+            conf = conf.squeeze(0).cpu().numpy()
         return conf
 
     def _extract_extrinsics(self, model_output: dict[str, torch.Tensor]) -> np.ndarray | None:
@@ -115,7 +115,7 @@ class OutputProcessor:
         """
         extrinsics = model_output.get("extrinsics", None)
         if extrinsics is not None:
-            extrinsics = extrinsics.squeeze(0).cpu().numpy()  
+            extrinsics = extrinsics.squeeze(0).cpu().numpy()
         return extrinsics
 
     def _extract_intrinsics(self, model_output: dict[str, torch.Tensor]) -> np.ndarray | None:
@@ -130,7 +130,7 @@ class OutputProcessor:
         """
         intrinsics = model_output.get("intrinsics", None)
         if intrinsics is not None:
-            intrinsics = intrinsics.squeeze(0).cpu().numpy()  
+            intrinsics = intrinsics.squeeze(0).cpu().numpy()
         return intrinsics
 
     def _extract_sky(self, model_output: dict[str, torch.Tensor]) -> np.ndarray | None:
@@ -145,7 +145,7 @@ class OutputProcessor:
         """
         sky = model_output.get("sky", None)
         if sky is not None:
-            sky = sky.squeeze(0).cpu().numpy() >= 0.5  
+            sky = sky.squeeze(0).cpu().numpy() >= 0.5
         return sky
 
     def _extract_aux(self, model_output: dict[str, torch.Tensor]) -> AddictDict:

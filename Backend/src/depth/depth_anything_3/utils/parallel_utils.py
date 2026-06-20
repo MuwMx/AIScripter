@@ -26,7 +26,7 @@ def async_call_func(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         loop = asyncio.get_event_loop()
-        
+
         return await loop.run_in_executor(None, func, *args, **kwargs)
 
     return wrapper
@@ -71,10 +71,10 @@ def parallel_execution(
     desc=None,
     **kwargs,
 ):
-    
-    
-    
-    
+
+
+
+
     args = list(args)
 
     def get_length(args: List, kwargs: Dict):
@@ -90,7 +90,7 @@ def parallel_execution(
         action_args = [
             (arg[i] if isinstance(arg, list) and len(arg) == length else arg) for arg in args
         ]
-        
+
         action_kwargs = {
             key: (
                 kwargs[key][i]
@@ -102,10 +102,10 @@ def parallel_execution(
         return action_args, action_kwargs
 
     if not sequential:
-        
+
         pool = ThreadPool(processes=num_processes)
 
-        
+
         results = []
         asyncs = []
         length = get_length(args, kwargs)
@@ -114,10 +114,10 @@ def parallel_execution(
             async_result = pool.apply_async(action, action_args, action_kwargs)
             asyncs.append(async_result)
 
-        
+
         if not async_return:
             for async_result in tqdm(asyncs, desc=desc, disable=not print_progress):
-                results.append(async_result.get())  
+                results.append(async_result.get())
             pool.close()
             pool.join()
             return results

@@ -84,7 +84,7 @@ class VideoProcessor:
         Args:
             args: Parsed command line arguments
         """
-        
+
         self.interpolate: bool = args.interpolate
         self.upscale: bool = args.upscale
         self.restore: bool = args.restore
@@ -96,7 +96,7 @@ class VideoProcessor:
         self.objDetect: bool = args.obj_detect
         self.stabilize: bool = args.stabilize
 
-        
+
         self.interpolateFactor: int = args.interpolate_factor
         self.interpolateMethod: str = args.interpolate_method
         self.upscaleFactor: int = args.upscale_factor
@@ -109,7 +109,7 @@ class VideoProcessor:
         self.objDetectMethod: str = args.obj_detect_method
         self.objDetectDisableAnnotations: bool = args.obj_detect_disable_annotations
 
-        
+
         self.half: bool = args.half
         self.ensemble: bool = args.ensemble
         self.forceStatic: bool = args.static
@@ -118,7 +118,7 @@ class VideoProcessor:
         self.compileMode: str = args.compile_mode
         self.decodeMethod: str = args.decode_method
 
-        
+
         self.inpoint: float = args.inpoint
         self.outpoint: float = args.outpoint
         self.resize: bool = args.resize
@@ -129,7 +129,7 @@ class VideoProcessor:
         self.outputScaleWidth: int = args.output_scale_width
         self.outputScaleHeight: int = args.output_scale_height
 
-        
+
         self.sharpenSens: float = args.sharpen_sens
         self.autoclipSens: float = args.autoclip_sens
         self.autoclipMethod: str = args.autoclip_method
@@ -146,7 +146,7 @@ class VideoProcessor:
 
         self.demo: bool = getattr(args, "demo", False)
 
-        
+
         self.customModel: str = args.custom_model
         self.benchmark: bool = args.benchmark
         self.preview: bool = args.preview
@@ -161,7 +161,7 @@ class VideoProcessor:
         Args:
             args: Command line arguments containing inpoint and outpoint
         """
-        
+
         from src.utils.getVideoMetadata import getVideoMetadata
 
         videoMetadata = getVideoMetadata(
@@ -257,9 +257,9 @@ class VideoProcessor:
         Args:
             frame: Input video frame tensor
         """
-        
-        
-        
+
+
+
 
         if self.restore:
             frame = self.restore_process(frame)
@@ -434,7 +434,7 @@ class VideoProcessor:
         self.ProgressBarLogic = ProgressBarLogic
 
         try:
-            
+
             from src.initializeModels import initializeModels
 
             progressState.update({"status": "Initializing AI models..."})
@@ -762,8 +762,8 @@ def main():
 
     except KeyboardInterrupt:
         logWarning("Process interrupted by user")
-        
-        
+
+
         os._exit(130)
     except Exception as e:
         logError(f"An unexpected error occurred: {str(e)}")

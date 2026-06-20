@@ -37,69 +37,69 @@ def _make_encoder(backbone, features, use_pretrained, groups=1, expand=False, ex
         )
         scratch = _make_scratch(
             [256, 512, 1024, 1024], features, groups=groups, expand=expand
-        )  
+        )
     elif backbone == "beitl16_384":
         pretrained = _make_pretrained_beitl16_384(
             use_pretrained, hooks=hooks, use_readout=use_readout
         )
         scratch = _make_scratch(
             [256, 512, 1024, 1024], features, groups=groups, expand=expand
-        )  
+        )
     elif backbone == "beitb16_384":
         pretrained = _make_pretrained_beitb16_384(
             use_pretrained, hooks=hooks, use_readout=use_readout
         )
         scratch = _make_scratch(
             [96, 192, 384, 768], features, groups=groups, expand=expand
-        )  
+        )
     elif backbone == "swin2l24_384":
         pretrained = _make_pretrained_swin2l24_384(
             use_pretrained, hooks=hooks
         )
         scratch = _make_scratch(
             [192, 384, 768, 1536], features, groups=groups, expand=expand
-        )  
+        )
     elif backbone == "swin2b24_384":
         pretrained = _make_pretrained_swin2b24_384(
             use_pretrained, hooks=hooks
         )
         scratch = _make_scratch(
             [128, 256, 512, 1024], features, groups=groups, expand=expand
-        )  
+        )
     elif backbone == "swin2t16_256":
         pretrained = _make_pretrained_swin2t16_256(
             use_pretrained, hooks=hooks
         )
         scratch = _make_scratch(
             [96, 192, 384, 768], features, groups=groups, expand=expand
-        )  
+        )
     elif backbone == "swinl12_384":
         pretrained = _make_pretrained_swinl12_384(
             use_pretrained, hooks=hooks
         )
         scratch = _make_scratch(
             [192, 384, 768, 1536], features, groups=groups, expand=expand
-        )  
+        )
     elif backbone == "next_vit_large_6m":
         from .backbones.next_vit import _make_pretrained_next_vit_large_6m
         pretrained = _make_pretrained_next_vit_large_6m(hooks=hooks)
         scratch = _make_scratch(
             in_features, features, groups=groups, expand=expand
-        )  
+        )
     elif backbone == "levit_384":
         pretrained = _make_pretrained_levit_384(
             use_pretrained, hooks=hooks
         )
         scratch = _make_scratch(
             [384, 512, 768], features, groups=groups, expand=expand
-        )  
+        )
     elif backbone == "vitl16_384":
         pretrained = _make_pretrained_vitl16_384(
             use_pretrained, hooks=hooks, use_readout=use_readout
         )
         scratch = _make_scratch(
             [256, 512, 1024, 1024], features, groups=groups, expand=expand
-        )  
+        )
     elif backbone == "vitb_rn50_384":
         pretrained = _make_pretrained_vitb_rn50_384(
             use_pretrained,
@@ -109,20 +109,20 @@ def _make_encoder(backbone, features, use_pretrained, groups=1, expand=False, ex
         )
         scratch = _make_scratch(
             [256, 512, 768, 768], features, groups=groups, expand=expand
-        )  
+        )
     elif backbone == "vitb16_384":
         pretrained = _make_pretrained_vitb16_384(
             use_pretrained, hooks=hooks, use_readout=use_readout
         )
         scratch = _make_scratch(
             [96, 192, 384, 768], features, groups=groups, expand=expand
-        )  
+        )
     elif backbone == "resnext101_wsl":
         pretrained = _make_pretrained_resnext101_wsl(use_pretrained)
-        scratch = _make_scratch([256, 512, 1024, 2048], features, groups=groups, expand=expand)  
+        scratch = _make_scratch([256, 512, 1024, 2048], features, groups=groups, expand=expand)
     elif backbone == "efficientnet_lite3":
         pretrained = _make_pretrained_efficientnet_lite3(use_pretrained, exportable=exportable)
-        scratch = _make_scratch([32, 48, 136, 384], features, groups=groups, expand=expand)  
+        scratch = _make_scratch([32, 48, 136, 384], features, groups=groups, expand=expand)
     else:
         print(f"Backbone '{backbone}' not implemented")
         assert False
@@ -373,7 +373,7 @@ class ResidualConvUnit_custom(nn.Module):
 
         return self.skip_add.add(out, x)
 
-        
+
 
 
 class FeatureFusionBlock_custom(nn.Module):
@@ -418,7 +418,7 @@ class FeatureFusionBlock_custom(nn.Module):
         if len(xs) == 2:
             res = self.resConfUnit1(xs[1])
             output = self.skip_add.add(output, res)
-            
+
 
         output = self.resConfUnit2(output)
 

@@ -57,7 +57,7 @@ def drop_path(x, drop_prob: float = 0.0, training: bool = False):
     keep_prob = 1 - drop_prob
     shape = (x.shape[0],) + (1,) * (
         x.ndim - 1
-    )  
+    )
     random_tensor = x.new_empty(shape).bernoulli_(keep_prob)
     if keep_prob > 0.0:
         random_tensor.div_(keep_prob)
@@ -139,7 +139,7 @@ class PatchEmbed(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         _, _, H, W = x.shape
         patch_H, patch_W = self.patch_size
-        
+
         assert H % patch_H == 0, (
             f"Input image height {H} is not a multiple of patch height {patch_H}"
         )
@@ -147,12 +147,12 @@ class PatchEmbed(nn.Module):
             f"Input image width {W} is not a multiple of patch width: {patch_W}"
         )
 
-        x = self.proj(x)  
+        x = self.proj(x)
         H, W = x.size(2), x.size(3)
-        x = x.flatten(2).transpose(1, 2)  
+        x = x.flatten(2).transpose(1, 2)
         x = self.norm(x)
         if not self.flatten_embedding:
-            x = x.reshape(-1, H, W, self.embed_dim)  
+            x = x.reshape(-1, H, W, self.embed_dim)
         return x
 
     def flops(self) -> float:
@@ -222,7 +222,7 @@ class SwiGLUFFN(nn.Module):
 try:
     from xformers.ops import SwiGLU
 
-    
+
     XFORMERS_AVAILABLE = True
 except ImportError:
     SwiGLU = SwiGLUFFN
@@ -255,7 +255,7 @@ try:
     from xformers.components.attention import ScaledDotProduct
     from xformers.components import MultiHeadDispatch
 
-    
+
     XFORMERS_AVAILABLE = True
 except ImportError:
     XFORMERS_AVAILABLE = False
@@ -282,10 +282,10 @@ class Attention(nn.Module):
         self.proj = nn.Linear(dim, dim, bias=proj_bias)
         self.proj_drop = nn.Dropout(proj_drop)
 
-        
-        
-        
-        
+
+
+
+
 
     def forward(self, x: Tensor, attn_bias=None) -> Tensor:
         B, N, C = x.shape
@@ -313,7 +313,7 @@ class Attention(nn.Module):
 class MemEffAttention(Attention):
     def forward(self, x: Tensor, attn_bias=None) -> Tensor:
         if not XFORMERS_AVAILABLE:
-            
+
             assert attn_bias is None, "xFormers is required for nested tensors usage"
             return super().forward(x, attn_bias)
 
@@ -336,7 +336,7 @@ try:
     from xformers.ops import fmha
     from xformers.ops import scaled_index_add, index_select_cat
 
-    
+
     XFORMERS_AVAILABLE = True
 except ImportError:
     XFORMERS_AVAILABLE = False
@@ -361,7 +361,7 @@ class Block(nn.Module):
         ffn_layer: Callable[..., nn.Module] = Mlp,
     ) -> None:
         super().__init__()
-        
+
         self.norm1 = norm_layer(dim)
         self.attn = attn_class(
             dim,
@@ -400,7 +400,7 @@ class Block(nn.Module):
             return self.ls2(self.mlp(self.norm2(x)))
 
         if self.training and self.sample_drop_ratio > 0.1:
-            
+
             x = drop_add_residual_stochastic_depth(
                 x,
                 residual_func=attn_residual_func,
@@ -414,7 +414,7 @@ class Block(nn.Module):
             )
         elif self.training and self.sample_drop_ratio > 0.0:
             x = x + self.drop_path1(attn_residual_func(x, attn_bias))
-            x = x + self.drop_path1(ffn_residual_func(x))  
+            x = x + self.drop_path1(ffn_residual_func(x))
         else:
             x = x + attn_residual_func(x, attn_bias)
             x = x + ffn_residual_func(x)
@@ -427,13 +427,13 @@ def drop_add_residual_stochastic_depth(
     sample_drop_ratio: float = 0.0,
     attn_bias=None,
 ) -> Tensor:
-    
+
     b, n, d = x.shape
     sample_subset_size = max(int(b * (1 - sample_drop_ratio)), 1)
     brange = (torch.randperm(b, device=x.device))[:sample_subset_size]
     x_subset = x[brange]
 
-    
+
     residual = residual_func(x_subset, attn_bias)
 
     x_flat = x.flatten(1)
@@ -441,7 +441,7 @@ def drop_add_residual_stochastic_depth(
 
     residual_scale_factor = b / sample_subset_size
 
-    
+
     x_plus_residual = torch.index_add(
         x_flat, 0, brange, residual.to(dtype=x.dtype), alpha=residual_scale_factor
     )
@@ -513,18 +513,18 @@ def drop_add_residual_stochastic_depth_list(
     sample_drop_ratio: float = 0.0,
     scaling_vector=None,
 ) -> Tensor:
-    
+
     branges_scales = [
         get_branges_scales(x, sample_drop_ratio=sample_drop_ratio) for x in x_list
     ]
     branges = [s[0] for s in branges_scales]
     residual_scale_factors = [s[1] for s in branges_scales]
 
-    
+
     attn_bias, x_cat = get_attn_bias_and_cat(x_list, branges)
 
-    
-    residual_list = attn_bias.split(residual_func(x_cat, attn_bias=attn_bias))  
+
+    residual_list = attn_bias.split(residual_func(x_cat, attn_bias=attn_bias))
 
     outputs = []
     for x, brange, residual, residual_scale_factor in zip(
@@ -639,8 +639,8 @@ class DinoVisionTransformer(nn.Module):
         proj_bias=True,
         drop_path_rate=0.0,
         drop_path_uniform=False,
-        
-        init_values=1e-5,  
+
+        init_values=1e-5,
         embed_layer=PatchEmbed,
         act_layer=nn.GELU,
         block_fn=NestedTensorBlock,
@@ -675,7 +675,7 @@ class DinoVisionTransformer(nn.Module):
         norm_layer = partial(nn.LayerNorm, eps=1e-6)
 
         self.num_features = self.embed_dim = (
-            embed_dim  
+            embed_dim
         )
         self.num_tokens = 1
         self.n_blocks = depth
@@ -701,7 +701,7 @@ class DinoVisionTransformer(nn.Module):
         else:
             dpr = [
                 x.item() for x in torch.linspace(0, drop_path_rate, depth)
-            ]  
+            ]
 
         if ffn_layer == "mlp":
             logger.info("using MLP layer as FFN")
@@ -740,7 +740,7 @@ class DinoVisionTransformer(nn.Module):
             chunked_blocks = []
             chunksize = depth // block_chunks
             for i in range(0, depth, chunksize):
-                
+
                 chunked_blocks.append(
                     [nn.Identity()] * i + blocks_list[i : i + chunksize]
                 )
@@ -773,8 +773,8 @@ class DinoVisionTransformer(nn.Module):
         dim = x.shape[-1]
         w0 = w // self.patch_size
         h0 = h // self.patch_size
-        
-        
+
+
         w0, h0 = w0 + 0.1, h0 + 0.1
 
         patch_pos_embed = nn.functional.interpolate(
@@ -840,7 +840,7 @@ class DinoVisionTransformer(nn.Module):
             pad_h = 0
         if pad_w == self.patch_size:
             pad_w = 0
-        
+
         if pad_h + pad_w > 0:
             x = torch.nn.functional.interpolate(
                 x, (H + pad_h, W + pad_w), mode="bilinear"
@@ -851,20 +851,20 @@ class DinoVisionTransformer(nn.Module):
         features = []
         for blk in self.blocks:
             x = blk(x)
-        
-        
-        
-        
 
-        
+
+
+
+
+
 
         x_norm = self.norm(x)
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
         features = []
         features.append(x_norm)
         features.append(x_norm)
@@ -877,7 +877,7 @@ class DinoVisionTransformer(nn.Module):
 
     def _get_intermediate_layers_not_chunked(self, x, n=1):
         x = self.prepare_tokens_with_masks(x)
-        
+
         output, total_block_len = [], len(self.blocks)
         blocks_to_take = (
             range(total_block_len - n, total_block_len) if isinstance(n, int) else n
@@ -894,12 +894,12 @@ class DinoVisionTransformer(nn.Module):
     def _get_intermediate_layers_chunked(self, x, n=1):
         x = self.prepare_tokens_with_masks(x)
         output, i, total_block_len = [], 0, len(self.blocks[-1])
-        
+
         blocks_to_take = (
             range(total_block_len - n, total_block_len) if isinstance(n, int) else n
         )
         for block_chunk in self.blocks:
-            for blk in block_chunk[i:]:  
+            for blk in block_chunk[i:]:
                 x = blk(x)
                 if i in blocks_to_take:
                     output.append(x)
@@ -912,7 +912,7 @@ class DinoVisionTransformer(nn.Module):
     def get_intermediate_layers(
         self,
         x: torch.Tensor,
-        n: Union[int, Sequence] = 1,  
+        n: Union[int, Sequence] = 1,
         reshape: bool = False,
         return_class_token: bool = False,
         norm=True,
@@ -940,14 +940,14 @@ class DinoVisionTransformer(nn.Module):
     def forward(self, *args, is_training=False, **kwargs):
         ret = self.forward_features(*args, **kwargs)
         return ret
-        
-        
-        
-        
+
+
+
+
 
 
 class PosConv(nn.Module):
-    
+
     def __init__(self, in_chans, embed_dim=768, stride=1):
         super(PosConv, self).__init__()
         self.proj = nn.Sequential(
@@ -964,8 +964,8 @@ class PosConv(nn.Module):
         x = x.flatten(2).transpose(1, 2)
         return x
 
-    
-    
+
+
 
 
 class DinoWindowVisionTransformer(nn.Module):
@@ -983,8 +983,8 @@ class DinoWindowVisionTransformer(nn.Module):
         proj_bias=True,
         drop_path_rate=0.0,
         drop_path_uniform=False,
-        
-        init_values=1e-5,  
+
+        init_values=1e-5,
         embed_layer=PatchEmbed,
         act_layer=nn.GELU,
         block_fn=NestedTensorBlock,
@@ -1019,7 +1019,7 @@ class DinoWindowVisionTransformer(nn.Module):
         norm_layer = partial(nn.LayerNorm, eps=1e-6)
 
         self.num_features = self.embed_dim = (
-            embed_dim  
+            embed_dim
         )
         self.num_tokens = 1
         self.n_blocks = depth
@@ -1034,22 +1034,22 @@ class DinoWindowVisionTransformer(nn.Module):
         )
         num_patches = self.patch_embed.num_patches
 
-        
-        
+
+
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, embed_dim))
 
         self.pos_conv = PosConv(self.embed_dim, self.embed_dim)
 
         self.window_size = window_size
-        
-        
+
+
 
         if drop_path_uniform is True:
             dpr = [drop_path_rate] * depth
         else:
             dpr = [
                 x.item() for x in torch.linspace(0, drop_path_rate, depth)
-            ]  
+            ]
 
         if ffn_layer == "mlp":
             logger.info("using MLP layer as FFN")
@@ -1088,7 +1088,7 @@ class DinoWindowVisionTransformer(nn.Module):
             chunked_blocks = []
             chunksize = depth // block_chunks
             for i in range(0, depth, chunksize):
-                
+
                 chunked_blocks.append(
                     [nn.Identity()] * i + blocks_list[i : i + chunksize]
                 )
@@ -1120,13 +1120,13 @@ class DinoWindowVisionTransformer(nn.Module):
             pass
         self.init_weights()
 
-        self.total_step = 10000  
+        self.total_step = 10000
         self.start_step = 2000
         self.current_step = 20000
 
     def init_weights(self):
-        
-        
+
+
         named_apply(init_weights_vit_timm, self)
         for i in range(4):
             try:
@@ -1136,21 +1136,21 @@ class DinoWindowVisionTransformer(nn.Module):
 
     def interpolate_pos_encoding(self, x, w, h):
         previous_dtype = x.dtype
-        
-        
+
+
         npatch = x.shape[1]
         N = self.pos_embed.shape[1]
         if npatch == N and w == h:
             return self.pos_embed
         pos_embed = self.pos_embed.float()
-        
-        
+
+
         patch_pos_embed = pos_embed
         dim = x.shape[-1]
         w0 = w // self.patch_size
         h0 = h // self.patch_size
-        
-        
+
+
         w0, h0 = w0 + 0.1, h0 + 0.1
 
         patch_pos_embed = nn.functional.interpolate(
@@ -1167,7 +1167,7 @@ class DinoWindowVisionTransformer(nn.Module):
         )
         patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, dim)
         return patch_pos_embed.to(previous_dtype)
-        
+
 
     def window_partition(
         self, x: torch.Tensor, window_size: int, hw: Tuple[int, int], conv_feature=False
@@ -1208,8 +1208,8 @@ class DinoWindowVisionTransformer(nn.Module):
                 .view(-1, window_size * window_size, C)
             )
 
-        
-        return windows  
+
+        return windows
 
     def window_unpartition(
         self,
@@ -1242,8 +1242,8 @@ class DinoWindowVisionTransformer(nn.Module):
             C = windows.shape[-1]
             x = x.permute(0, 5, 1, 3, 2, 4).contiguous().view(B, C, H, W)
 
-        
-        
+
+
         return x
 
     def prepare_tokens_with_masks(self, x, masks=None, step=-1):
@@ -1254,7 +1254,7 @@ class DinoWindowVisionTransformer(nn.Module):
                 masks.unsqueeze(-1), self.mask_token.to(x.dtype).unsqueeze(0), x
             )
 
-        
+
         if step == -1:
             step = self.current_step
         else:
@@ -1297,13 +1297,13 @@ class DinoWindowVisionTransformer(nn.Module):
         else:
             mask = mask_pad[:, :].view(nh, nw, nh, nw)
 
-        
+
         mask[: radius + 1, : radius + 1, :window_size, :window_size] = True
         mask[: radius + 1, -radius - 1 :, :window_size, -window_size:] = True
         mask[-radius - 1 :, : radius + 1, -window_size:, :window_size] = True
         mask[-radius - 1 :, -radius - 1 :, -window_size:, -window_size:] = True
 
-        
+
         mask[radius + 1 : -radius - 1, : radius + 1, :, :] = mask[
             radius + 1 : -radius - 1, radius : radius + 1, :, :
         ]
@@ -1319,7 +1319,7 @@ class DinoWindowVisionTransformer(nn.Module):
 
         mask = mask.view(nh * nw, nh * nw)
         bias_pad = torch.log(mask_pad)
-        
+
         self.register_buffer("attn_bias", bias_pad)
 
         return bias_pad
@@ -1357,7 +1357,7 @@ class DinoWindowVisionTransformer(nn.Module):
             pad_h = 0
         if pad_w == self.patch_size:
             pad_w = 0
-        
+
         if pad_h + pad_w > 0:
             x = torch.nn.functional.interpolate(
                 x, (H + pad_h, W + pad_w), mode="bilinear"
@@ -1380,36 +1380,36 @@ class DinoWindowVisionTransformer(nn.Module):
             attn_bias = None
 
         x = self.prepare_tokens_with_masks(x, masks)
-        
+
 
         features = []
-        
+
         for blk in self.blocks:
             x = blk(x, attn_bias)
-        
 
-        
-        
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
 
-        
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         x_norm = self.norm(x)
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
         features = []
         features.append(x_norm)
         features.append(x_norm)
@@ -1422,7 +1422,7 @@ class DinoWindowVisionTransformer(nn.Module):
 
     def _get_intermediate_layers_not_chunked(self, x, n=1):
         x = self.prepare_tokens_with_masks(x)
-        
+
         output, total_block_len = [], len(self.blocks)
         blocks_to_take = (
             range(total_block_len - n, total_block_len) if isinstance(n, int) else n
@@ -1439,12 +1439,12 @@ class DinoWindowVisionTransformer(nn.Module):
     def _get_intermediate_layers_chunked(self, x, n=1):
         x = self.prepare_tokens_with_masks(x)
         output, i, total_block_len = [], 0, len(self.blocks[-1])
-        
+
         blocks_to_take = (
             range(total_block_len - n, total_block_len) if isinstance(n, int) else n
         )
         for block_chunk in self.blocks:
-            for blk in block_chunk[i:]:  
+            for blk in block_chunk[i:]:
                 x = blk(x)
                 if i in blocks_to_take:
                     output.append(x)
@@ -1457,7 +1457,7 @@ class DinoWindowVisionTransformer(nn.Module):
     def get_intermediate_layers(
         self,
         x: torch.Tensor,
-        n: Union[int, Sequence] = 1,  
+        n: Union[int, Sequence] = 1,
         reshape: bool = False,
         return_class_token: bool = False,
         norm=True,
@@ -1485,10 +1485,10 @@ class DinoWindowVisionTransformer(nn.Module):
     def forward(self, *args, is_training=False, **kwargs):
         ret = self.forward_features(*args, **kwargs)
         return ret
-        
-        
-        
-        
+
+
+
+
 
 
 def init_weights_vit_timm(module: nn.Module, name: str = ""):
@@ -1552,7 +1552,7 @@ def vit_large(patch_size=14, checkpoint=None, **kwargs):
                 new_state_dict[key_new] = value
 
             model.load_state_dict(new_state_dict, strict=True)
-        
+
         if "del_mask_token" in kwargs and kwargs["del_mask_token"] == True:
             del model.mask_token
     return model
@@ -1569,7 +1569,7 @@ def vit_giant2(patch_size=14, checkpoint=None, **kwargs):
         depth=40,
         num_heads=24,
         mlp_ratio=4,
-        
+
         block_fn=partial(NestedTensorBlock, attn_class=MemEffAttention),
         **kwargs,
     )
@@ -1593,7 +1593,7 @@ def vit_giant2(patch_size=14, checkpoint=None, **kwargs):
 
             pdb.set_trace()
             model.load_state_dict(new_state_dict, strict=True)
-        
+
         del model.mask_token
 
     return model
@@ -1605,26 +1605,26 @@ if __name__ == "__main__":
     except:
         from mmengine import Config
 
-    
 
-    
-    
+
+
+
     cfg = Config.fromfile(
         "mu.hu/monodepth/mono/configs/HourglassDecoder/pub12.convlarge.0.3_150.py"
     )
 
-    
+
     rgb = torch.zeros(1, 3, 1400, 1680).cuda()
     model = vit_large(
         checkpoint="pretrained_weight_repo/vit/dinov2_vitl14_pretrain.pth", kwarg=cfg
     ).cuda()
 
-    
-    
-    
+
+
+
 
     out1 = model(rgb)
-    
+
     temp = 0
 
 

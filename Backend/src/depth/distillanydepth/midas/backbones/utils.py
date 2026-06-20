@@ -163,7 +163,7 @@ def make_backbone_default(
 
     readout_oper = get_readout_oper(vit_features, features, use_readout, start_index_readout)
 
-    
+
     pretrained.act_postprocess1 = nn.Sequential(
         readout_oper[0],
         Transpose(1, 2),

@@ -100,15 +100,15 @@ class RotaryPositionEmbedding2D(nn.Module):
         """
         cache_key = (dim, seq_len, device, dtype)
         if cache_key not in self.frequency_cache:
-            
+
             exponents = torch.arange(0, dim, 2, device=device).float() / dim
             inv_freq = 1.0 / (self.base_frequency**exponents)
 
-            
+
             positions = torch.arange(seq_len, device=device, dtype=inv_freq.dtype)
             angles = torch.einsum("i,j->ij", positions, inv_freq)
 
-            
+
             angles = angles.to(dtype)
             angles = torch.cat((angles, angles), dim=-1)
             cos_components = angles.cos().to(dtype)
@@ -149,10 +149,10 @@ class RotaryPositionEmbedding2D(nn.Module):
         Returns:
             Tokens with applied rotary position embeddings.
         """
-        
+
         cos = F.embedding(positions, cos_comp)[:, None, :, :]
         sin = F.embedding(positions, sin_comp)[:, None, :, :]
-        
+
         return (tokens * cos) + (self._rotate_features(tokens) * sin)
 
     def forward(self, tokens: torch.Tensor, positions: torch.Tensor) -> torch.Tensor:
@@ -170,25 +170,25 @@ class RotaryPositionEmbedding2D(nn.Module):
         Raises:
             AssertionError: If input dimensions are invalid or positions are malformed.
         """
-        
+
         assert tokens.size(-1) % 2 == 0, "Feature dimension must be even"
         assert (
             positions.ndim == 3 and positions.shape[-1] == 2
         ), "Positions must have shape (batch_size, n_tokens, 2)"
 
-        
+
         feature_dim = tokens.size(-1) // 2
 
-        
+
         max_position = int(positions.max()) + 1
         cos_comp, sin_comp = self._compute_frequency_components(
             feature_dim, max_position, tokens.device, tokens.dtype
         )
 
-        
+
         vertical_features, horizontal_features = tokens.chunk(2, dim=-1)
 
-        
+
         vertical_features = self._apply_1d_rope(
             vertical_features, positions[..., 0], cos_comp, sin_comp
         )
@@ -196,5 +196,5 @@ class RotaryPositionEmbedding2D(nn.Module):
             horizontal_features, positions[..., 1], cos_comp, sin_comp
         )
 
-        
+
         return torch.cat((vertical_features, horizontal_features), dim=-1)

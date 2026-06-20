@@ -36,10 +36,10 @@ def activate_head_gs(out, activation="norm_exp", conf_activation="expp1", conf_d
     Returns:
         Tuple of (3D points tensor, confidence tensor)
     """
-    
-    fmap = out.permute(0, 2, 3, 1)  
 
-    
+    fmap = out.permute(0, 2, 3, 1)
+
+
     conf_dim = 1 if conf_dim is None else conf_dim
     xyz = fmap[:, :, :, :-conf_dim]
     conf = fmap[:, :, :, -1] if conf_dim == 1 else fmap[:, :, :, -conf_dim:]
@@ -89,7 +89,7 @@ class Permute(nn.Module):
         super().__init__()
         self.dims = dims
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:  
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x.permute(*self.dims)
 
 
@@ -108,21 +108,21 @@ def position_grid_to_embed(
     """
     H, W, grid_dim = pos_grid.shape
     assert grid_dim == 2
-    pos_flat = pos_grid.reshape(-1, grid_dim)  
+    pos_flat = pos_grid.reshape(-1, grid_dim)
 
-    
-    emb_x = make_sincos_pos_embed(embed_dim // 2, pos_flat[:, 0], omega_0=omega_0)  
-    emb_y = make_sincos_pos_embed(embed_dim // 2, pos_flat[:, 1], omega_0=omega_0)  
 
-    
-    emb = torch.cat([emb_x, emb_y], dim=-1)  
+    emb_x = make_sincos_pos_embed(embed_dim // 2, pos_flat[:, 0], omega_0=omega_0)
+    emb_y = make_sincos_pos_embed(embed_dim // 2, pos_flat[:, 1], omega_0=omega_0)
 
-    return emb.view(H, W, embed_dim)  
+
+    emb = torch.cat([emb_x, emb_y], dim=-1)
+
+    return emb.view(H, W, embed_dim)
 
 
 def make_sincos_pos_embed(embed_dim: int, pos: torch.Tensor, omega_0: float = 100) -> torch.Tensor:
     """
-    This function generates a 1D positional embedding from a given grid using sine and cosine functions. 
+    This function generates a 1D positional embedding from a given grid using sine and cosine functions. # noqa
 
     Args:
     - embed_dim: The embedding dimension.
@@ -134,15 +134,15 @@ def make_sincos_pos_embed(embed_dim: int, pos: torch.Tensor, omega_0: float = 10
     assert embed_dim % 2 == 0
     omega = torch.arange(embed_dim // 2, dtype=torch.float32, device=pos.device)
     omega /= embed_dim / 2.0
-    omega = 1.0 / omega_0**omega  
+    omega = 1.0 / omega_0**omega
 
-    pos = pos.reshape(-1)  
-    out = torch.einsum("m,d->md", pos, omega)  
+    pos = pos.reshape(-1)
+    out = torch.einsum("m,d->md", pos, omega)
 
-    emb_sin = torch.sin(out)  
-    emb_cos = torch.cos(out)  
+    emb_sin = torch.sin(out)
+    emb_cos = torch.cos(out)
 
-    emb = torch.cat([emb_sin, emb_cos], dim=1)  
+    emb = torch.cat([emb_sin, emb_cos], dim=1)
     return emb.float()
 
 
@@ -173,26 +173,26 @@ def create_uv_grid(
     Returns:
         torch.Tensor: A (width, height, 2) tensor of UV coordinates.
     """
-    
+
     if aspect_ratio is None:
         aspect_ratio = float(width) / float(height)
 
-    
+
     diag_factor = (aspect_ratio**2 + 1.0) ** 0.5
     span_x = aspect_ratio / diag_factor
     span_y = 1.0 / diag_factor
 
-    
+
     left_x = -span_x * (width - 1) / width
     right_x = span_x * (width - 1) / width
     top_y = -span_y * (height - 1) / height
     bottom_y = span_y * (height - 1) / height
 
-    
+
     x_coords = torch.linspace(left_x, right_x, steps=width, dtype=dtype, device=device)
     y_coords = torch.linspace(top_y, bottom_y, steps=height, dtype=dtype, device=device)
 
-    
+
     uu, vv = torch.meshgrid(x_coords, y_coords, indexing="xy")
     uv_grid = torch.stack((uu, vv), dim=-1)
 

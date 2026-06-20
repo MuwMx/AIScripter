@@ -45,7 +45,7 @@ def least_squares_scale_scalar(
     if not a.is_floating_point() or not b.is_floating_point():
         raise TypeError("Tensors must be floating point type")
 
-    
+
     num = torch.dot(a.reshape(-1), b.reshape(-1))
     den = torch.dot(b.reshape(-1), b.reshape(-1)).clamp_min(eps)
     return num / den
@@ -153,7 +153,7 @@ def set_sky_regions_to_max_depth(
     """
     depth = depth.clone()
 
-    
+
     depth[~non_sky_mask] = max_depth
     if depth_conf is not None:
         depth_conf = depth_conf.clone()

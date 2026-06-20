@@ -102,14 +102,14 @@ class MemEffAttentionNorm(MemEffAttention):
         self.qknorm = qknorm
         if qknorm:
             head_dim = self.num_heads
-            
-            
-            
-            
-            
 
-            
-            
+
+
+
+
+
+
+
             dim = kwargs.get("dim", args[0] if args else None)
             num_heads = kwargs.get(
                 "num_heads", args[1] if len(args) > 1 else self.num_heads
@@ -120,12 +120,12 @@ class MemEffAttentionNorm(MemEffAttention):
             self.k_norm = nn.LayerNorm(head_dim)
 
     def forward(self, x, bias=None):
-        
-        
-        
-        
 
-        
+
+
+
+
+
         B, N, C = x.shape
         qkv = (
             self.qkv(x)
@@ -138,9 +138,9 @@ class MemEffAttentionNorm(MemEffAttention):
             q = self.q_norm(q)
             k = self.k_norm(k)
 
-        
-        
-        
+
+
+
 
         return (
             torch.nn.functional.scaled_dot_product_attention(
@@ -149,9 +149,9 @@ class MemEffAttentionNorm(MemEffAttention):
             .transpose(1, 2)
             .reshape(B, N, C)
         )
-        
 
-        
+
+
         x = torch.nn.functional.scaled_dot_product_attention(
             q, k, v, attn_mask=bias, dropout_p=0.0, is_causal=False
         )
@@ -192,7 +192,7 @@ class DinoVisionTransformerV3(nn.Module):
         num_register_tokens=0,
         interpolate_antialias=False,
         interpolate_offset=0.1,
-        qknorm_start=-1,  
+        qknorm_start=-1,
     ):
         super().__init__()
         norm_layer = partial(nn.LayerNorm, eps=1e-6)
@@ -244,29 +244,29 @@ class DinoVisionTransformerV3(nn.Module):
 
         blocks_list = []
         for i in range(depth):
-            
+
             use_qknorm = (qknorm_start >= 0) and (i >= qknorm_start)
 
-            
-            
-            
 
-            
+
+
+
+
             if use_qknorm:
-                
-                
-                
-                
 
-                
-                
-                
-                
 
-                
+
+
+
+
+
+
+
+
+
                 attn_cls = partial(MemEffAttentionNorm, qknorm=True)
             else:
-                attn_cls = MemEffAttention  
+                attn_cls = MemEffAttention
 
             blocks_list.append(
                 block_fn(
@@ -281,13 +281,13 @@ class DinoVisionTransformerV3(nn.Module):
                     act_layer=act_layer,
                     ffn_layer=ffn_layer,
                     init_values=init_values,
-                    attn_class=attn_cls,  
+                    attn_class=attn_cls,
                 )
             )
 
         self.blocks = nn.ModuleList(blocks_list)
         self.chunked_blocks = (
-            False  
+            False
         )
 
         self.norm = norm_layer(embed_dim)
@@ -426,7 +426,7 @@ def vit_small(patch_size=16, num_register_tokens=0, **kwargs):
         mlp_ratio=4,
         block_fn=partial(
             Block, attn_class=MemEffAttention
-        ),  
+        ),
         num_register_tokens=num_register_tokens,
         **kwargs,
     )
@@ -492,5 +492,5 @@ def DINOv2_V3(model_name, qknorm_start=-1):
         num_register_tokens=0,
         interpolate_antialias=False,
         interpolate_offset=0.1,
-        qknorm_start=qknorm_start,  
+        qknorm_start=qknorm_start,
     )

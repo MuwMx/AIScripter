@@ -26,12 +26,12 @@ def load_pfm(file):
         width, height = map(int, dim_match.groups())
     else:
         raise Exception('Malformed PFM header.')
-    
+
     scale = float((file.readline()).decode('UTF-8').rstrip())
-    if scale < 0: 
+    if scale < 0:
         data_type = '<f'
     else:
-        data_type = '>f' 
+        data_type = '>f'
     data_string = file.read()
     data = np.fromstring(data_string, data_type)
     shape = (height, width, 3) if color else (height, width)
@@ -55,11 +55,11 @@ def depth_scale_shift_normalization(depth, low_percent=2, high_percent=98):
 
     
 def norm_to_rgb(norm):
-    
-    
-    
+
+
+
     norm_rgb = ((norm + 1.0) / 2.0 * 255.0).astype(np.uint8)
-    
+
     norm_rgb = np.clip(norm_rgb, a_min=0, a_max=255)
     norm_rgb = norm_rgb.astype(np.uint8)
     return norm_rgb
@@ -77,24 +77,24 @@ def colorize_depth_maps(
         depth = depth_map.detach().clone().squeeze().cpu().numpy()
     elif isinstance(depth_map, np.ndarray):
         depth = depth_map.copy().squeeze()
-    
+
     if depth.ndim < 3:
         depth = depth[np.newaxis, :, :]
 
-    
 
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
 
     if min_depth != max_depth:
         depth = ((depth - min_depth) / (max_depth - min_depth)).clip(0, 1)
     else:
-         
+
         depth = depth * 0.
 
 
@@ -155,7 +155,7 @@ def resize_max_res(img: Image.Image, max_edge_resolution: int, resample_method=R
     Returns:
         Image.Image: Resized image.
     """
-    
+
     if isinstance(img, torch.Tensor):
         return resize_max_res_torch(img, max_edge_resolution, resample_method)
     
@@ -188,7 +188,7 @@ def get_tv_resample_method(method_str: str) -> InterpolationMode:
     resample_method_dict = {
         "bilinear": InterpolationMode.BILINEAR,
         "bicubic": InterpolationMode.BICUBIC,
-        
+
     }
     resample_method = resample_method_dict.get(method_str, None)
     if resample_method is None:
@@ -201,34 +201,34 @@ def create_point_cloud(depth_map, camera_matrix, extrinsic_matrix):
 
     """Create point cloud from depth map and camera parameters."""
     
-    
+
     height, width = depth_map.shape
 
-    
+
     x = np.linspace(0, width - 1, width)
     y = np.linspace(0, height - 1, height)
     x, y = np.meshgrid(x, y)
 
-    
+
     normalized_x = (x - camera_matrix[0, 2]) / camera_matrix[0, 0]
     normalized_y = (y - camera_matrix[1, 2]) / camera_matrix[1, 1]
     normalized_z = np.ones_like(x)
 
-    
+
     depth_map_reshaped = np.repeat(depth_map[:, :, np.newaxis], 3, axis=2)
     homogeneous_camera_coords = depth_map_reshaped * np.dstack((normalized_x, 
                                                                 normalized_y, 
                                                                 normalized_z))
 
-    
+
     ones = np.ones((height, width, 1))
     homogeneous_camera_coords = np.dstack((homogeneous_camera_coords, ones))
 
-    
+
     homogeneous_world_coords = np.dot(homogeneous_camera_coords, 
                                       extrinsic_matrix.T)
 
-    
+
     point_cloud = (homogeneous_world_coords[:, :, :3] / 
                                             homogeneous_world_coords[:, :, 3:])
 
@@ -253,9 +253,9 @@ def write_ply_mask(points,colors,path_ply,mask=None):
                     property uchar blue
                     end_header
                 '''.format(num)
-        
-    
-    
+
+
+
     with open(path_ply, 'w') as f:
         f.write(ply_header)
         for i in range(points.shape[0]):

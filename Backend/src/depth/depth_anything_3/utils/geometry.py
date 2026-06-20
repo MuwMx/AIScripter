@@ -26,11 +26,11 @@ def as_homogeneous(ext):
     Supports torch.Tensor or np.ndarray.
     """
     if isinstance(ext, torch.Tensor):
-        
+
         if ext.shape[-2:] == (4, 4):
             return ext
         elif ext.shape[-2:] == (3, 4):
-            
+
             ones = torch.zeros_like(ext[..., :1, :4])
             ones[..., 0, 3] = 1.0
             return torch.cat([ext, ones], dim=-2)
@@ -53,9 +53,9 @@ def as_homogeneous(ext):
 
 @torch.jit.script
 def affine_inverse(A: torch.Tensor):
-    R = A[..., :3, :3]  
-    T = A[..., :3, 3:]  
-    P = A[..., 3:, :]  
+    R = A[..., :3, :3]
+    T = A[..., :3, 3:]
+    P = A[..., 3:, :]
     return torch.cat([torch.cat([R.mT, -R.mT @ T], dim=-1), P], dim=-2)
 
 
@@ -66,7 +66,7 @@ def transpose_last_two_axes(arr):
     if arr.ndim < 2:
         return arr
     axes = list(range(arr.ndim))
-    
+
     axes[-2], axes[-1] = axes[-1], axes[-2]
     return arr.transpose(axes)
 
@@ -97,7 +97,7 @@ def quat_to_mat(quaternions: torch.Tensor) -> torch.Tensor:
         Rotation matrices as tensor of shape (..., 3, 3).
     """
     i, j, k, r = torch.unbind(quaternions, -1)
-    
+
     two_s = 2.0 / (quaternions * quaternions).sum(-1)
 
     o = torch.stack(
@@ -148,37 +148,37 @@ def mat_to_quat(matrix: torch.Tensor) -> torch.Tensor:
         )
     )
 
-    
+
     quat_by_rijk = torch.stack(
         [
-            
-            
+
+
             torch.stack([q_abs[..., 0] ** 2, m21 - m12, m02 - m20, m10 - m01], dim=-1),
-            
-            
+
+
             torch.stack([m21 - m12, q_abs[..., 1] ** 2, m10 + m01, m02 + m20], dim=-1),
-            
-            
+
+
             torch.stack([m02 - m20, m10 + m01, q_abs[..., 2] ** 2, m12 + m21], dim=-1),
-            
-            
+
+
             torch.stack([m10 - m01, m20 + m02, m21 + m12, q_abs[..., 3] ** 2], dim=-1),
         ],
         dim=-2,
     )
 
-    
-    
+
+
     flr = torch.tensor(0.1).to(dtype=q_abs.dtype, device=q_abs.device)
     quat_candidates = quat_by_rijk / (2.0 * q_abs[..., None].max(flr))
 
-    
-    
+
+
     out = quat_candidates[F.one_hot(q_abs.argmax(dim=-1), num_classes=4) > 0.5, :].reshape(
         batch_dim + (4,)
     )
 
-    
+
     out = out[..., [1, 2, 3, 0]]
 
     out = standardize_quaternion(out)
@@ -219,18 +219,18 @@ def sample_image_grid(
     shape: tuple[int, ...],
     device: torch.device = torch.device("cpu"),
 ) -> tuple[
-    torch.Tensor,  
-    torch.Tensor,  
+    torch.Tensor,
+    torch.Tensor,
 ]:
     """Get normalized (range 0 to 1) coordinates and integer indices for an image."""
 
-    
-    
+
+
     indices = [torch.arange(length, device=device) for length in shape]
     stacked_indices = torch.stack(torch.meshgrid(*indices, indexing="ij"), dim=-1)
 
-    
-    
+
+
     coordinates = [(idx + 0.5) / length for idx, length in zip(indices, shape)]
     coordinates = reversed(coordinates)
     coordinates = torch.stack(torch.meshgrid(*coordinates, indexing="xy"), dim=-1)
@@ -238,20 +238,20 @@ def sample_image_grid(
     return coordinates, stacked_indices
 
 
-def homogenize_points(points: torch.Tensor) -> torch.Tensor:  
+def homogenize_points(points: torch.Tensor) -> torch.Tensor:
     """Convert batched points (xyz) to (xyz1)."""
     return torch.cat([points, torch.ones_like(points[..., :1])], dim=-1)
 
 
-def homogenize_vectors(vectors: torch.Tensor) -> torch.Tensor:  
+def homogenize_vectors(vectors: torch.Tensor) -> torch.Tensor:
     """Convert batched vectors (xyz) to (xyz0)."""
     return torch.cat([vectors, torch.zeros_like(vectors[..., :1])], dim=-1)
 
 
 def transform_rigid(
-    homogeneous_coordinates: torch.Tensor,  
-    transformation: torch.Tensor,  
-) -> torch.Tensor:  
+    homogeneous_coordinates: torch.Tensor,
+    transformation: torch.Tensor,
+) -> torch.Tensor:
     """Apply a rigid-body transformation to points or vectors."""
     return einsum(
         transformation,
@@ -261,21 +261,21 @@ def transform_rigid(
 
 
 def transform_cam2world(
-    homogeneous_coordinates: torch.Tensor,  
-    extrinsics: torch.Tensor,  
-) -> torch.Tensor:  
+    homogeneous_coordinates: torch.Tensor,
+    extrinsics: torch.Tensor,
+) -> torch.Tensor:
     """Transform points from 3D camera coordinates to 3D world coordinates."""
     return transform_rigid(homogeneous_coordinates, extrinsics)
 
 
 def unproject(
-    coordinates: torch.Tensor,  
-    z: torch.Tensor,  
-    intrinsics: torch.Tensor,  
-) -> torch.Tensor:  
+    coordinates: torch.Tensor,
+    z: torch.Tensor,
+    intrinsics: torch.Tensor,
+) -> torch.Tensor:
     """Unproject 2D camera coordinates with the given Z values."""
 
-    
+
     coordinates = homogenize_points(coordinates)
     ray_directions = einsum(
         intrinsics.float().inverse().to(intrinsics),
@@ -283,19 +283,19 @@ def unproject(
         "... i j, ... j -> ... i",
     )
 
-    
+
     return ray_directions * z[..., None]
 
 
 def get_world_rays(
-    coordinates: torch.Tensor,  
-    extrinsics: torch.Tensor,  
-    intrinsics: torch.Tensor,  
+    coordinates: torch.Tensor,
+    extrinsics: torch.Tensor,
+    intrinsics: torch.Tensor,
 ) -> tuple[
-    torch.Tensor,  
-    torch.Tensor,  
+    torch.Tensor,
+    torch.Tensor,
 ]:
-    
+
     directions = unproject(
         coordinates,
         torch.ones_like(coordinates[..., 0]),
@@ -303,17 +303,17 @@ def get_world_rays(
     )
     directions = directions / directions.norm(dim=-1, keepdim=True)
 
-    
+
     directions = homogenize_vectors(directions)
     directions = transform_cam2world(directions, extrinsics)[..., :-1]
 
-    
+
     origins = extrinsics[..., :-1, -1].broadcast_to(directions.shape)
 
     return origins, directions
 
 
-def get_fov(intrinsics: torch.Tensor) -> torch.Tensor:  
+def get_fov(intrinsics: torch.Tensor) -> torch.Tensor:
     intrinsics_inv = intrinsics.float().inverse().to(intrinsics)
 
     def process_vector(vector):
@@ -331,13 +331,13 @@ def get_fov(intrinsics: torch.Tensor) -> torch.Tensor:
 
 
 def map_pdf_to_opacity(
-    pdf: torch.Tensor,  
+    pdf: torch.Tensor,
     global_step: int = 0,
     opacity_mapping: Optional[dict] = None,
-) -> torch.Tensor:  
-    
+) -> torch.Tensor:
 
-    
+
+
     if opacity_mapping is not None:
         cfg = SimpleNamespace(**opacity_mapping)
         x = cfg.initial + min(global_step / cfg.warm_up, 1) * (cfg.final - cfg.initial)
@@ -345,7 +345,7 @@ def map_pdf_to_opacity(
         x = 0.0
     exponent = 2**x
 
-    
+
     return 0.5 * (1 - (1 - pdf) ** exponent + pdf ** (1 / exponent))
 
 def normalize_homogenous_points(points):
@@ -369,9 +369,9 @@ def pixel_space_to_camera_space(pixel_space_points, depth, intrinsics):
         torch.Tensor: Camera space points with shape (b, v, h, w, 3).
     """
     pixel_space_points = homogenize_points(pixel_space_points)
-    
-    
-    
+
+
+
     camera_space_points = torch.einsum(
         "b v i j , h w j -> b v h w i", inverse_intrinsic_matrix(intrinsics), pixel_space_points
     )
@@ -450,15 +450,15 @@ def unproject_depth(
         c2w = c2w[None, None].repeat(depth.shape[0], depth.shape[1], 1, 1)
 
     if not ixt_normalized:
-        
+
         h, w = depth.shape[-3], depth.shape[-2]
         x_grid, y_grid = torch.meshgrid(
             torch.arange(w, device=depth.device, dtype=depth.dtype),
             torch.arange(h, device=depth.device, dtype=depth.dtype),
             indexing="xy",
-        )  
+        )
     else:
-        
+
         assert num_patches_x is not None and num_patches_y is not None
         dx = 1 / num_patches_x
         dy = 1 / num_patches_y
@@ -486,13 +486,13 @@ def unproject_depth(
             indexing="ij",
         )
 
-    
-    pixel_space_points = torch.stack((x_grid, y_grid), dim=-1)  
+
+    pixel_space_points = torch.stack((x_grid, y_grid), dim=-1)
     camera_points = pixel_space_to_camera_space(
         pixel_space_points, depth, intrinsics
-    )  
+    )
 
-    
-    world_points = camera_space_to_world_space(camera_points, c2w)  
+
+    world_points = camera_space_to_world_space(camera_points, c2w)
 
     return world_points

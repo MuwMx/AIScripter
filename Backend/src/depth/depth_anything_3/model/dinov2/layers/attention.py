@@ -26,7 +26,7 @@ class Attention(nn.Module):
         proj_drop: float = 0.0,
         norm_layer: nn.Module = nn.LayerNorm,
         qk_norm: bool = False,
-        fused_attn: bool = True,  
+        fused_attn: bool = True,
         rope=None,
     ) -> None:
         super().__init__()

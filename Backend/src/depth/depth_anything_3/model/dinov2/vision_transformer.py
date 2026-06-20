@@ -17,9 +17,9 @@ from einops import rearrange
 
 from depth_anything_3.utils.logger import logger
 
-from .layers import LayerScale  
-from .layers import Mlp  
-from .layers import (  
+from .layers import LayerScale
+from .layers import Mlp
+from .layers import (
     Block,
     PatchEmbed,
     PositionGetter,
@@ -46,15 +46,15 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
     assert embed_dim % 2 == 0
     omega = np.arange(embed_dim // 2, dtype=float)
     omega /= embed_dim / 2.0
-    omega = 1.0 / 10000**omega  
+    omega = 1.0 / 10000**omega
 
-    pos = pos.reshape(-1)  
-    out = np.einsum("m,d->md", pos, omega)  
+    pos = pos.reshape(-1)
+    out = np.einsum("m,d->md", pos, omega)
 
-    emb_sin = np.sin(out)  
-    emb_cos = np.cos(out)  
+    emb_sin = np.sin(out)
+    emb_cos = np.cos(out)
 
-    emb = np.concatenate([emb_sin, emb_cos], axis=1)  
+    emb = np.concatenate([emb_sin, emb_cos], axis=1)
     return emb
 
 
@@ -95,7 +95,7 @@ class DinoVisionTransformer(nn.Module):
         proj_bias=True,
         drop_path_rate=0.0,
         drop_path_uniform=False,
-        init_values=1.0,  
+        init_values=1.0,
         embed_layer=PatchEmbed,
         act_layer=nn.GELU,
         block_fn=Block,
@@ -140,7 +140,7 @@ class DinoVisionTransformer(nn.Module):
         self.patch_start_idx = 1
         norm_layer = nn.LayerNorm
         self.num_features = self.embed_dim = (
-            embed_dim  
+            embed_dim
         )
         self.alt_start = alt_start
         self.qknorm_start = qknorm_start
@@ -174,7 +174,7 @@ class DinoVisionTransformer(nn.Module):
         else:
             dpr = [
                 x.item() for x in torch.linspace(0, drop_path_rate, depth)
-            ]  
+            ]
         if ffn_layer == "mlp":
             logger.info("using MLP layer as FFN")
             ffn_layer = Mlp
@@ -229,19 +229,19 @@ class DinoVisionTransformer(nn.Module):
         dim = x.shape[-1]
         w0 = w // self.patch_size
         h0 = h // self.patch_size
-        M = int(math.sqrt(N))  
+        M = int(math.sqrt(N))
         assert N == M * M
         kwargs = {}
         if self.interpolate_offset:
-            
-            
-            
-            
+
+
+
+
             sx = float(w0 + self.interpolate_offset) / M
             sy = float(h0 + self.interpolate_offset) / M
             kwargs["scale_factor"] = (sx, sy)
         else:
-            
+
             kwargs["size"] = (w0, h0)
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed.reshape(1, M, M, dim).permute(0, 3, 1, 2),
@@ -312,11 +312,11 @@ class DinoVisionTransformer(nn.Module):
                 l_pos = pos
 
             if self.alt_start != -1 and (i == self.alt_start - 1) and x.shape[1] >= THRESH_FOR_REF_SELECTION and kwargs.get("cam_token", None) is None:
-                
+
                 strategy = kwargs.get("ref_view_strategy", "saddle_balanced")
                 logger.info(f"Selecting reference view using strategy: {strategy}")
                 b_idx = select_reference_view(x, strategy=strategy)
-                
+
                 x = reorder_by_reference(x, b_idx)
                 local_x = reorder_by_reference(local_x, b_idx)
 
@@ -340,7 +340,7 @@ class DinoVisionTransformer(nn.Module):
 
             if i in blocks_to_take:
                 out_x = torch.cat([local_x, x], dim=-1) if self.cat_token else x
-                
+
                 if x.shape[1] >= THRESH_FOR_REF_SELECTION and self.alt_start != -1 and 'b_idx' in locals():
                     out_x = restore_original_order(out_x, b_idx)
                 output.append((out_x[:, :, 0], out_x))
@@ -372,7 +372,7 @@ class DinoVisionTransformer(nn.Module):
     def get_intermediate_layers(
         self,
         x: torch.Tensor,
-        n: Union[int, Sequence] = 1,  
+        n: Union[int, Sequence] = 1,
         export_feat_layers: List[int] = [],
         **kwargs,
     ) -> Tuple[Union[torch.Tensor, Tuple[torch.Tensor]]]:
@@ -405,7 +405,7 @@ def vit_small(patch_size=16, num_register_tokens=0, depth=12, **kwargs):
         depth=depth,
         num_heads=6,
         mlp_ratio=4,
-        
+
         num_register_tokens=num_register_tokens,
         **kwargs,
     )
@@ -419,7 +419,7 @@ def vit_base(patch_size=16, num_register_tokens=0, depth=12, **kwargs):
         depth=depth,
         num_heads=12,
         mlp_ratio=4,
-        
+
         num_register_tokens=num_register_tokens,
         **kwargs,
     )
@@ -433,7 +433,7 @@ def vit_large(patch_size=16, num_register_tokens=0, depth=24, **kwargs):
         depth=depth,
         num_heads=16,
         mlp_ratio=4,
-        
+
         num_register_tokens=num_register_tokens,
         **kwargs,
     )

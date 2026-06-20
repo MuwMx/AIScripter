@@ -32,7 +32,7 @@ def _supportsColor():
     if not hasattr(sys.stdout, "isatty") or not sys.stdout.isatty():
         return False
     if sys.platform == "win32":
-        
+
         try:
             ver = sys.getwindowsversion()
             return ver.major >= 10 and ver.build >= 14393

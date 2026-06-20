@@ -23,13 +23,13 @@ def extri_intri_to_pose_encoding(
 ):
     """Convert camera extrinsics and intrinsics to a compact pose encoding."""
 
-    
-    
-    R = extrinsics[:, :, :3, :3]  
-    T = extrinsics[:, :, :3, 3]  
+
+
+    R = extrinsics[:, :, :3, :3]
+    T = extrinsics[:, :, :3, 3]
 
     quat = mat_to_quat(R)
-    
+
     H, W = image_size_hw
     fov_h = 2 * torch.atan((H / 2) / intrinsics[..., 1, 1])
     fov_w = 2 * torch.atan((W / 2) / intrinsics[..., 0, 0])
@@ -60,7 +60,7 @@ def pose_encoding_to_extri_intri(
     intrinsics[..., 1, 1] = fy
     intrinsics[..., 0, 2] = W / 2
     intrinsics[..., 1, 2] = H / 2
-    intrinsics[..., 2, 2] = 1.0  
+    intrinsics[..., 2, 2] = 1.0
 
     return extrinsics, intrinsics
 
@@ -182,26 +182,26 @@ def standardize_quaternion(quaternions: torch.Tensor) -> torch.Tensor:
 
 
 def cam_quat_xyzw_to_world_quat_wxyz(cam_quat_xyzw, c2w):
-    
-    
+
+
     b, n = cam_quat_xyzw.shape[:2]
-    
+
     cam_quat_wxyz = torch.cat(
         [
-            cam_quat_xyzw[..., 3:4],  
-            cam_quat_xyzw[..., 0:1],  
-            cam_quat_xyzw[..., 1:2],  
-            cam_quat_xyzw[..., 2:3],  
+            cam_quat_xyzw[..., 3:4],
+            cam_quat_xyzw[..., 0:1],
+            cam_quat_xyzw[..., 1:2],
+            cam_quat_xyzw[..., 2:3],
         ],
         dim=-1,
     )
-    
+
     cam_quat_wxyz_flat = cam_quat_wxyz.reshape(-1, 4)
     rotmat_cam = quat_to_mat(cam_quat_wxyz_flat).reshape(b, n, 3, 3)
-    
+
     rotmat_c2w = c2w[..., :3, :3]
     rotmat_world = torch.matmul(rotmat_c2w, rotmat_cam)
-    
+
     rotmat_world_flat = rotmat_world.reshape(-1, 3, 3)
     world_quat_wxyz_flat = mat_to_quat(rotmat_world_flat)
     world_quat_wxyz = world_quat_wxyz_flat.reshape(b, n, 4)

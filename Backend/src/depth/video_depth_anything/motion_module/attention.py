@@ -64,9 +64,9 @@ class CrossAttention(nn.Module):
         self.scale = dim_head**-0.5
 
         self.heads = heads
-        
-        
-        
+
+
+
         self.sliceable_head_dim = heads
         self._slice_size = None
         self._use_memory_efficient_attention_xformers = False
@@ -160,10 +160,10 @@ class CrossAttention(nn.Module):
                 attention_mask = F.pad(attention_mask, (0, target_length), value=0.0)
                 attention_mask = attention_mask.repeat_interleave(self.heads, dim=0)
 
-        
+
         if XFORMERS_AVAILABLE and self._use_memory_efficient_attention_xformers:
             hidden_states = self._memory_efficient_attention_xformers(query, key, value, attention_mask)
-            
+
             hidden_states = hidden_states.to(query.dtype)
         else:
             if self._slice_size is None or query.shape[0] // self._slice_size == 1:
@@ -171,10 +171,10 @@ class CrossAttention(nn.Module):
             else:
                 hidden_states = self._sliced_attention(query, key, value, sequence_length, dim, attention_mask)
 
-        
+
         hidden_states = self.to_out[0](hidden_states)
 
-        
+
         hidden_states = self.to_out[1](hidden_states)
         return hidden_states
 
@@ -199,13 +199,13 @@ class CrossAttention(nn.Module):
 
         attention_probs = attention_scores.softmax(dim=-1)
 
-        
+
         attention_probs = attention_probs.to(value.dtype)
 
-        
+
         hidden_states = torch.bmm(attention_probs, value)
 
-        
+
         hidden_states = self.reshape_batch_dim_to_heads(hidden_states)
         return hidden_states
 
@@ -242,13 +242,13 @@ class CrossAttention(nn.Module):
 
             attn_slice = attn_slice.softmax(dim=-1)
 
-            
+
             attn_slice = attn_slice.to(value.dtype)
             attn_slice = torch.bmm(attn_slice, value[start_idx:end_idx])
 
             hidden_states[start_idx:end_idx] = attn_slice
 
-        
+
         hidden_states = self.reshape_batch_dim_to_heads(hidden_states)
         return hidden_states
 
@@ -268,8 +268,8 @@ class CrossAttention(nn.Module):
         hidden_states = self.reshape_4d_to_heads(hidden_states)
         return hidden_states
 
-        
-        
+
+
 
     def _memory_efficient_attention_split(self, query, key, value, attention_mask):
         batch_size = query.shape[0]
@@ -324,11 +324,11 @@ class FeedForward(nn.Module):
             act_fn = ApproximateGELU(dim, inner_dim)
 
         self.net = nn.ModuleList([])
-        
+
         self.net.append(act_fn)
-        
+
         self.net.append(nn.Dropout(dropout))
-        
+
         self.net.append(nn.Linear(inner_dim, dim_out))
 
     def forward(self, hidden_states):
@@ -349,7 +349,7 @@ class GELU(nn.Module):
     def gelu(self, gate):
         if gate.device.type != "mps":
             return F.gelu(gate)
-        
+
         return F.gelu(gate.to(dtype=torch.float32)).to(dtype=gate.dtype)
 
     def forward(self, hidden_states):
@@ -375,7 +375,7 @@ class GEGLU(nn.Module):
     def gelu(self, gate):
         if gate.device.type != "mps":
             return F.gelu(gate)
-        
+
         return F.gelu(gate.to(dtype=torch.float32)).to(dtype=gate.dtype)
 
     def forward(self, hidden_states):
@@ -403,7 +403,7 @@ def precompute_freqs_cis(dim: int, end: int, theta: float = 10000.0):
     freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[: (dim // 2)].float() / dim))
     t = torch.arange(end, device=freqs.device, dtype=torch.float32)
     freqs = torch.outer(t, freqs)
-    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)  
+    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)
     return freqs_cis
 
 

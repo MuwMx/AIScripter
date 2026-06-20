@@ -431,12 +431,12 @@ class MotionBlurPipeline:
         framesToInsert = factor - 1
         halfWindow = self.shutterAngle / 720.0
 
-        
+
         kStart = max(1, math.ceil(factor * (1.0 - halfWindow)))
         prevSegStart = min(framesToInsert, kStart - 1)
         leftCount = framesToInsert - prevSegStart
 
-        
+
         nextSegCount = min(framesToInsert, math.floor(factor * halfWindow))
 
         totalSamples = leftCount + 1 + nextSegCount
@@ -481,7 +481,7 @@ class MotionBlurPipeline:
                     break
 
                 if prevFrame is None:
-                    
+
                     collector.clear()
                     self.interpolateProcess(nextFrame, collector, framesToInsert, None)
                     prevFrame = nextFrame
@@ -494,7 +494,7 @@ class MotionBlurPipeline:
                 newSeg = list(collector.frames)
 
                 if currFrame is None:
-                    
+
                     prevSeg = newSeg
                     currFrame = nextFrame
                     continue
@@ -528,7 +528,7 @@ class MotionBlurPipeline:
                 if self.readBuffer.isReadFinished() and self.readBuffer.isQueueEmpty():
                     break
 
-            
+
             if currFrame is not None:
                 self.writeBuffer.write(currFrame)
                 bar(1)

@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOCAL_ROOT = os.path.dirname(os.path.dirname(CURRENT_DIR))  
+LOCAL_ROOT = os.path.dirname(os.path.dirname(CURRENT_DIR))
 
 
 ROAMING_ROOT = os.path.join(os.environ['APPDATA'], "MyScripterAE")
@@ -19,7 +19,7 @@ BACKEND_MAIN = os.path.join(ROAMING_ROOT, "backend", "main.py")
 
 class VFXOrchestrator:
     def __init__(self, repo):
-        self.repo = repo  
+        self.repo = repo
 
     def run_pipeline(self, task_type, mode, ui_settings, log_callback):
         """
@@ -28,15 +28,15 @@ class VFXOrchestrator:
         try:
             log_callback(f"[ORCHESTRATOR] Starting pipeline. Active modules: {', '.join(task_type).upper()}")
 
-            
+
             clip_data = self.repo.get_clip_metadata()
             
-            
+
             project_name = self.repo.project.GetName()
             if project_name == "Untitled Project":
                 raise RuntimeError("Save your project in DaVinci (Ctrl+S) before running the pipeline!")
 
-            
+
             base_work_dir = Path(ui_settings.get("work_dir") or LOCAL_ROOT)
             cache_base_dir = base_work_dir / "RS_Cache" / project_name / "Cache"
             
@@ -50,13 +50,13 @@ class VFXOrchestrator:
             chunk_name = f"chunk_{timestamp}.mp4"
             input_chunk_path = str(input_dir / chunk_name)
 
-            
-            
-            
+
+
+
             log_callback("[ORCHESTRATOR] Bake Mode: Creating Render Job in Resolve...")
             project = self.repo.project
             
-           
+
             project.SetRenderSettings({
                 "TargetDir": str(input_dir),
                 "CustomName": chunk_name.replace(".mp4", ""),
@@ -64,8 +64,8 @@ class VFXOrchestrator:
                 "ExportAudio": False,
                 "VideoCodec": "H264",
                 "VideoFormat": "mp4",
-                "VideoQuality": 15000,  
-                "RenderMode": 0,        
+                "VideoQuality": 15000,
+                "RenderMode": 0,
                 "SelectAllFrames": False,
                 "MarkIn": int(clip_data["start_frame"]),
                 "MarkOut": int(clip_data["end_frame"])
@@ -78,7 +78,7 @@ class VFXOrchestrator:
             log_callback(f"[ORCHESTRATOR] Render Job {job_id} added. Starting render...")
             project.StartRendering(job_id)
             
-            
+
             while True:
                 status = project.GetRenderJobStatus(job_id)
                 state = status.get("JobStatus", "")
@@ -93,7 +93,7 @@ class VFXOrchestrator:
             project.DeleteRenderJob(job_id)
             log_callback("[ORCHESTRATOR] Render Job removed from Deliver queue.")
 
-            
+
             actual_files = list(input_dir.glob(f"chunk_{timestamp}*"))
             if actual_files:
                 input_chunk_path = str(actual_files[0])
@@ -101,13 +101,13 @@ class VFXOrchestrator:
             else:
                 raise RuntimeError(f"Render finished, but no source file found in {input_dir}")
 
-            
+
             current_processing_file = input_chunk_path
             final_output_path = None
 
-            
-            
-            
+
+
+
             if "clean" in task_type:
                 clean_out = str(output_dir / f"AIScripter_{timestamp}_clean_out.mp4")
                 json_out = str(output_dir / f"frames_{timestamp}.json")
@@ -126,9 +126,9 @@ class VFXOrchestrator:
                 current_processing_file = clean_out
                 final_output_path = clean_out
 
-            
-            
-            
+
+
+
             if "rife" in task_type:
                 rife_out = str(output_dir / f"AIScripter_{timestamp}_rife_out.mp4")
                 
@@ -145,9 +145,9 @@ class VFXOrchestrator:
                 
                 final_output_path = rife_out
 
-            
-            
-            
+
+
+
             if final_output_path and os.path.exists(final_output_path):
                 log_callback("[ORCHESTRATOR] AI Chaining complete. Importing final result to DaVinci...")
                 self.repo.import_and_replace(
@@ -166,19 +166,19 @@ class VFXOrchestrator:
             raise e
         finally:
             log_callback("[ORCHESTRATOR] Starting garbage cleanup...")
-            
+
             if 'input_chunk_path' in locals() and os.path.exists(input_chunk_path):
                 try: os.remove(input_chunk_path)
                 except: pass
             
-            
+
             if "clean" in task_type and "rife" in task_type:
                 clean_temp = str(output_dir / f"AIScripter_{timestamp}_clean_out.mp4")
                 if os.path.exists(clean_temp):
                     try: os.remove(clean_temp)
                     except: pass
 
-            
+
             if "clean" in task_type:
                 json_temp = str(output_dir / f"frames_{timestamp}.json")
                 if os.path.exists(json_temp):

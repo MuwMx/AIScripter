@@ -65,12 +65,12 @@ class VideoDepthAnything(nn.Module):
         depth = self.head(features, patch_h, patch_w, T)[0]
         depth = F.interpolate(depth, size=(H, W), mode="bilinear", align_corners=True)
         depth = F.relu(depth)
-        return depth.squeeze(1).unflatten(0, (B, T)) 
+        return depth.squeeze(1).unflatten(0, (B, T))
 
     def infer_video_depth(self, frames, input_size=518, device='cuda', fp32=False):
         frame_height, frame_width = frames[0].shape[:2]
         ratio = max(frame_height, frame_width) / min(frame_height, frame_width)
-        if ratio > 1.78:  
+        if ratio > 1.78:
             input_size = int(input_size * 1.777 / ratio)
             input_size = round(input_size / 14) * 14
 
@@ -106,7 +106,7 @@ class VideoDepthAnything(nn.Module):
 
             with torch.no_grad():
                 with torch.autocast(device_type=device, enabled=(not fp32)):
-                    depth = self.forward(cur_input) 
+                    depth = self.forward(cur_input)
 
             depth = depth.to(cur_input.dtype)
             depth = F.interpolate(depth.flatten(0,1).unsqueeze(1), size=(frame_height, frame_width), mode='bilinear', align_corners=True)

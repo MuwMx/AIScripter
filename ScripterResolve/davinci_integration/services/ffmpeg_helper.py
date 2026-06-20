@@ -7,8 +7,8 @@ def cut_video_raw(ffmpeg_exe, input_path, output_path, source_start_frame, sourc
     """
     log_callback("[FFMPEG] Starting Raw Mode extraction...")
     
-    
-    
+
+
     start_sec = source_start_frame / timeline_fps
     duration_sec = duration_frames / timeline_fps
     

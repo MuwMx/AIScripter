@@ -28,11 +28,11 @@ def project_to_so3_strict(M: torch.Tensor) -> torch.Tensor:
     if M.shape[-2:] != (3, 3):
         raise ValueError("Input must be a batch of 3x3 matrices (i.e., shape [..., 3, 3]).")
 
-    
+
     U, S, Vh = torch.linalg.svd(M)
     V = Vh.mH
 
-    
+
     det_U = torch.det(U)
     det_V = torch.det(V)
     is_reflection = (det_U * det_V) < 0
@@ -45,7 +45,7 @@ def project_to_so3_strict(M: torch.Tensor) -> torch.Tensor:
     U_corrected = U @ correction_matrix
     R_so3_initial = U_corrected @ V.transpose(-2, -1)
 
-    
+
     current_det = torch.det(R_so3_initial)
     det_correction_factor = torch.pow(current_det, -1 / 3)[..., None, None]
     R_so3_final = R_so3_initial * det_correction_factor
@@ -54,10 +54,10 @@ def project_to_so3_strict(M: torch.Tensor) -> torch.Tensor:
 
 
 def rotate_sh(
-    sh_coefficients: torch.Tensor,  
-    rotations: torch.Tensor,  
-) -> torch.Tensor:  
-    
+    sh_coefficients: torch.Tensor,
+    rotations: torch.Tensor,
+) -> torch.Tensor:
+
     device = sh_coefficients.device
     dtype = sh_coefficients.dtype
 
@@ -66,11 +66,11 @@ def rotate_sh(
     with torch.autocast(device_type=rotations.device.type, enabled=False):
         rotations_float32 = rotations.to(torch.float32)
 
-        
+
         P = torch.tensor([[0, 0, 1], [1, 0, 0], [0, 1, 0]]).unsqueeze(0).to(rotations_float32)
         permuted_rotations = torch.linalg.inv(P) @ rotations_float32 @ P
 
-        
+
         permuted_rotations_so3 = project_to_so3_strict(permuted_rotations)
 
         alpha, beta, gamma = matrix_to_angles(permuted_rotations_so3)

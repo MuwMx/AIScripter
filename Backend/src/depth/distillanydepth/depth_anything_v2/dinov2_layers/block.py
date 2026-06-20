@@ -51,7 +51,7 @@ class Block(nn.Module):
         ffn_layer: Callable[..., nn.Module] = Mlp,
     ) -> None:
         super().__init__()
-        
+
         self.norm1 = norm_layer(dim)
         self.attn = attn_class(
             dim,
@@ -90,7 +90,7 @@ class Block(nn.Module):
             return self.ls2(self.mlp(self.norm2(x)))
 
         if self.training and self.sample_drop_ratio > 0.1:
-            
+
             x = drop_add_residual_stochastic_depth(
                 x,
                 residual_func=attn_residual_func,
@@ -103,7 +103,7 @@ class Block(nn.Module):
             )
         elif self.training and self.sample_drop_ratio > 0.0:
             x = x + self.drop_path1(attn_residual_func(x))
-            x = x + self.drop_path1(ffn_residual_func(x))  
+            x = x + self.drop_path1(ffn_residual_func(x))
         else:
             x = x + attn_residual_func(x)
             x = x + ffn_residual_func(x)
@@ -115,13 +115,13 @@ def drop_add_residual_stochastic_depth(
     residual_func: Callable[[Tensor], Tensor],
     sample_drop_ratio: float = 0.0,
 ) -> Tensor:
-    
+
     b, n, d = x.shape
     sample_subset_size = max(int(b * (1 - sample_drop_ratio)), 1)
     brange = (torch.randperm(b, device=x.device))[:sample_subset_size]
     x_subset = x[brange]
 
-    
+
     residual = residual_func(x_subset)
 
     x_flat = x.flatten(1)
@@ -129,7 +129,7 @@ def drop_add_residual_stochastic_depth(
 
     residual_scale_factor = b / sample_subset_size
 
-    
+
     x_plus_residual = torch.index_add(
         x_flat, 0, brange, residual.to(dtype=x.dtype), alpha=residual_scale_factor
     )
@@ -201,18 +201,18 @@ def drop_add_residual_stochastic_depth_list(
     sample_drop_ratio: float = 0.0,
     scaling_vector=None,
 ) -> Tensor:
-    
+
     branges_scales = [
         get_branges_scales(x, sample_drop_ratio=sample_drop_ratio) for x in x_list
     ]
     branges = [s[0] for s in branges_scales]
     residual_scale_factors = [s[1] for s in branges_scales]
 
-    
+
     attn_bias, x_cat = get_attn_bias_and_cat(x_list, branges)
 
-    
-    residual_list = attn_bias.split(residual_func(x_cat, attn_bias=attn_bias))  
+
+    residual_list = attn_bias.split(residual_func(x_cat, attn_bias=attn_bias))
 
     outputs = []
     for x, brange, residual, residual_scale_factor in zip(

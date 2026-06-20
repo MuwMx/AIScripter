@@ -2,7 +2,7 @@ import os
 import sys
 import argparse
 import subprocess
-import urllib.parse  
+import urllib.parse
 import cv2
 import numpy as np
 import torch
@@ -12,9 +12,9 @@ from tqdm import tqdm
 
 
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__)) 
-SRC_DIR = os.path.dirname(CURRENT_DIR)                   
-ROOT_DIR = os.path.dirname(SRC_DIR)                      
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+SRC_DIR = os.path.dirname(CURRENT_DIR)
+ROOT_DIR = os.path.dirname(SRC_DIR)
 
 FFMPEG_EXE = os.path.join(ROOT_DIR, "ffmpeg_shared", "ffmpeg.exe")
 WEIGHTS_DIR = os.path.join(ROOT_DIR, "weights")
@@ -93,10 +93,10 @@ def unpad_image(img_tensor, padding):
 
 class RifeWorker:
     def __init__(self):
-        self.device = device  
+        self.device = device
         print("[RIFE] Initializing RIFE 4.6 model (CUDA fp16)...")
 
-        
+
         if RIFE_WEIGHT_PATH is None:
             print(f"\n[CRITICAL ERROR] Weight file not found!")
             print(f"Script looked for directory: {RIFE_DIR}")
@@ -123,11 +123,11 @@ class RifeWorker:
         return pad_image(tensor)
 
     def process(self, input_path, output_path, scale):
-        
+
         input_path = urllib.parse.unquote(input_path)
         input_path = os.path.normpath(input_path)
         
-        
+
         if not os.path.exists(input_path):
             print(f"[CRITICAL ERROR] Source file not found: {input_path}")
             return
@@ -177,20 +177,20 @@ class RifeWorker:
                 
                 I1, _ = self._prepare_frame(raw_frame, width, height)
 
-                
+
                 for t in timesteps:
                     t_tensor = torch.full((1, 1, I0.shape[2], I0.shape[3]), t, dtype=torch.float16, device=self.device)
                     
-                    
+
                     mid = self.model(I0, I1, t_tensor)
                     
                     mid = unpad_image(mid, padding)
                     mid_bytes = (mid[0].permute(1, 2, 0) * 255.0).byte().cpu().numpy().tobytes()
                     process_out.stdin.write(mid_bytes)
 
-                
+
                 process_out.stdin.write(raw_frame)
-                I0.copy_(I1, non_blocking=True) 
+                I0.copy_(I1, non_blocking=True)
 
         process_in.stdout.close()
         process_out.stdin.close()

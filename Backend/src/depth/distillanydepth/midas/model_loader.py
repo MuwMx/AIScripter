@@ -130,10 +130,10 @@ def load_model(device, model_path, model_type="dpt_large_384", optimize=True, he
         resize_mode = "minimal"
         normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
-    
-    
-    
-    
+
+
+
+
     elif model_type == "dpt_levit_224":
         model = DPTDepthModel(
             path=model_path,

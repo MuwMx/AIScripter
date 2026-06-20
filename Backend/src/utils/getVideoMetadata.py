@@ -64,24 +64,24 @@ def getVideoMetadata(inputPath, inPoint, outPoint):
 
         probeData = json.loads(result.stdout)
 
-        
+
         videoStream = next(
             stream for stream in probeData["streams"] if stream["codec_type"] == "video"
         )
 
-        
-        
+
+
         if cs.AUDIO:
             hasAudio = any(
                 stream["codec_type"] == "audio" for stream in probeData["streams"]
             )
-            
-            
+
+
             cs.AUDIO = hasAudio
         else:
             hasAudio = False
 
-        
+
         width = int(videoStream["width"])
         height = int(videoStream["height"])
         fpsValue = videoStream.get("r_frame_rate", "1/1")

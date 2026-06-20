@@ -43,18 +43,18 @@ class DPT(BaseModel):
 
         self.channels_last = channels_last
 
-        
-        
+
+
         hooks = {
             "beitl16_512": [5, 11, 17, 23],
             "beitl16_384": [5, 11, 17, 23],
             "beitb16_384": [2, 5, 8, 11],
-            "swin2l24_384": [1, 1, 17, 1],  
-            "swin2b24_384": [1, 1, 17, 1],                  
-            "swin2t16_256": [1, 1, 5, 1],                   
-            "swinl12_384": [1, 1, 17, 1],                   
-            "next_vit_large_6m": [2, 6, 36, 39],            
-            "levit_384": [3, 11, 21],                       
+            "swin2l24_384": [1, 1, 17, 1],
+            "swin2b24_384": [1, 1, 17, 1],
+            "swin2t16_256": [1, 1, 5, 1],
+            "swinl12_384": [1, 1, 17, 1],
+            "next_vit_large_6m": [2, 6, 36, 39],
+            "levit_384": [3, 11, 21],
             "vitb_rn50_384": [0, 1, 8, 11],
             "vitb16_384": [2, 5, 8, 11],
             "vitl16_384": [5, 11, 17, 23],
@@ -67,11 +67,11 @@ class DPT(BaseModel):
         else:
             in_features = None
 
-        
+
         self.pretrained, self.scratch = _make_encoder(
             backbone,
             features,
-            False, 
+            False,
             groups=1,
             expand=False,
             exportable=False,

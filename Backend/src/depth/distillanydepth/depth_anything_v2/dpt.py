@@ -203,7 +203,7 @@ class DepthAnythingV2(nn.Module, PyTorchModelHubMixin):
         
         self.encoder = encoder
         self.pretrained = DINOv2(model_name=encoder)
-        
+
         
         self.depth_head = DPTHead(self.pretrained.embed_dim, features, use_bn, out_channels=out_channels, use_clstoken=use_clstoken)
     
@@ -213,14 +213,14 @@ class DepthAnythingV2(nn.Module, PyTorchModelHubMixin):
         patch_h, patch_w = x.shape[-2] // 14, x.shape[-1] // 14
         
         features = self.pretrained.get_intermediate_layers(x, self.intermediate_layer_idx[self.encoder], return_class_token=True)
-        
+
         
         depth = self.depth_head(features, patch_h, patch_w)
-        
+
         
         depth = F.relu(depth)
-        
-        
+
+
         return depth, features[3][0]
     
     @torch.no_grad()

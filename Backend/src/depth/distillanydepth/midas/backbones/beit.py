@@ -57,8 +57,8 @@ def _get_rel_pos_bias(self, window_size):
     relative_position_bias = new_relative_position_bias_table[
         self.relative_position_indices[key].view(-1)].view(
         window_size[0] * window_size[1] + 1,
-        window_size[0] * window_size[1] + 1, -1)  
-    relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  
+        window_size[0] * window_size[1] + 1, -1)
+    relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()
     return relative_position_bias.unsqueeze(0)
 
 
@@ -71,7 +71,7 @@ def attention_forward(self, x, resolution, shared_rel_pos_bias: Optional[torch.T
     qkv_bias = torch.cat((self.q_bias, self.k_bias, self.v_bias)) if self.q_bias is not None else None
     qkv = F.linear(input=x, weight=self.qkv.weight, bias=qkv_bias)
     qkv = qkv.reshape(B, N, 3, self.num_heads, -1).permute(2, 0, 3, 1, 4)
-    q, k, v = qkv.unbind(0)  
+    q, k, v = qkv.unbind(0)
 
     q = q * self.scale
     attn = (q @ k.transpose(-2, -1))

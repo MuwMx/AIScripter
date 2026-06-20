@@ -4,7 +4,7 @@ import json
 import subprocess
 import argparse
 import math
-import urllib.parse  
+import urllib.parse
 import cv2
 import numpy as np
 import torch
@@ -61,7 +61,7 @@ class DedupWorker:
         self.window_size = 11
         self.window = create_window(self.window_size, 3).to(self.device).half()
         
-        
+
         print(f"[CLEAN] Initializing SSIM (CUDA fp16). Threshold: {self.threshold}")
 
     def _prepare_frame(self, frame_bytes, width, height):
@@ -71,11 +71,11 @@ class DedupWorker:
         return tensor_resized, frame_bytes
 
     def process(self, input_path, output_video, output_json):
-        
+
         input_path = urllib.parse.unquote(input_path)
         input_path = os.path.normpath(input_path)
         
-        
+
         if not os.path.exists(input_path):
             print(f"[CRITICAL ERROR] Source file not found: {input_path}")
             print("Check if After Effects successfully rendered the chunk.")
@@ -83,7 +83,7 @@ class DedupWorker:
 
         print(f"[CLEAN] Normalized input path: {input_path}")
 
-        
+
         cap = cv2.VideoCapture(input_path)
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -91,12 +91,12 @@ class DedupWorker:
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         cap.release()
 
-        
+
         if total_frames == 0 or width == 0:
             print(f"[CRITICAL ERROR] OpenCV failed to read the video. The file might be corrupted.")
             return
 
-        
+
         print(f"[CLEAN] Video: {width}x{height} | Frames: {total_frames}")
 
         cmd_in = [
@@ -145,7 +145,7 @@ class DedupWorker:
         process_in.wait()
         process_out.wait()
 
-        
+
         print(f"\n[CLEAN] Done! Duplicates removed: {duplicates_count}")
 
         with open(output_json, 'w', encoding='utf-8') as f:

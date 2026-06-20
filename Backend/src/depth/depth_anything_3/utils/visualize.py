@@ -65,7 +65,7 @@ def visualize_depth(
     cm = matplotlib.colormaps[cmap]
     depth = ((depth - depth_min) / (depth_max - depth_min)).clip(0, 1)
     depth = 1 - depth
-    img_colored_np = cm(depth[None], bytes=False)[:, :, :, 0:3]  
+    img_colored_np = cm(depth[None], bytes=False)[:, :, :, 0:3]
     if ret_type == np.uint8:
         img_colored_np = (img_colored_np[0] * 255.0).astype(np.uint8)
     elif ret_type == np.float32 or ret_type == np.float64:
@@ -82,9 +82,9 @@ def visualize_depth(
 
 
 def vis_depth_map_tensor(
-    result: torch.Tensor,  
+    result: torch.Tensor,
     color_map: str = "Spectral",
-) -> torch.Tensor:  
+) -> torch.Tensor:
     """
     Color-map the depth map.
     """
@@ -100,21 +100,21 @@ def vis_depth_map_tensor(
 
 
 def apply_color_map(
-    x: torch.Tensor,  
+    x: torch.Tensor,
     color_map: str = "inferno",
-) -> torch.Tensor:  
+) -> torch.Tensor:
     cmap = matplotlib.cm.get_cmap(color_map)
 
-    
+
     mapped = cmap(x.float().detach().clip(min=0, max=1).cpu().numpy())[..., :3]
 
-    
+
     return torch.tensor(mapped, device=x.device, dtype=torch.float32)
 
 
 def apply_color_map_to_image(
-    image: torch.Tensor,  
+    image: torch.Tensor,
     color_map: str = "inferno",
-) -> torch.Tensor:  
+) -> torch.Tensor:
     image = apply_color_map(image, color_map)
     return rearrange(image, "... h w c -> ... c h w")

@@ -57,9 +57,9 @@ def read_video_frames(video_path, process_length, target_fps=-1, max_res=-1):
             if not ret or (process_length > 0 and frame_count >= process_length):
                 break
             if frame_count % stride == 0:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 if max_res > 0 and max(original_height, original_width) > max_res:
-                    frame = cv2.resize(frame, (width, height))  
+                    frame = cv2.resize(frame, (width, height))
                 frames.append(frame)
             frame_count += 1
         cap.release()
