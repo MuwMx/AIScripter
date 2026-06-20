@@ -18,7 +18,7 @@ AIScripter is a production-ready, high-performance monorepository that integrate
 
 ### Blackmagic Design DaVinci Resolve Workflow
 <p align="center">
-  <video src="media/davinci_pipeline.mp4" width="75%" autoplay loop muted playsinline title="DaVinci Resolve Core App Pipeline"></video>
+  <video src="https://github.com/user-attachments/assets/1ae98204-00a2-437e-91be-13eacfaa004a" width="75%" autoplay loop muted playsinline title="DaVinci Resolve Core App Pipeline"></video>
 </p>
 <p align="center">
   <em>Standalone PySide6 application processing standalone files with full RIFE interpolation and SSIM video deduplication support.</em>
