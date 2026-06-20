@@ -8,9 +8,9 @@ AIScripter is a production-ready, high-performance monorepository that integrate
 
 ### Adobe After Effects Integration (Modules & Panels)
 <p align="center">
-  <video src="media/ae_rife_dedup.mp4" width="32%" autoplay loop muted playsinline title="RIFE 4.6 & SSIM Deduplication"></video>
-  <video src="media/ae_depthmap.mp4" width="32%" autoplay loop muted playsinline title="Depth Anything V2 Map"></video>
-  <video src="media/ae_bg_removal.mp4" width="32%" autoplay loop muted playsinline title="BiRefNet Background Removal"></video>
+  <video src="https://github.com/user-attachments/assets/6be161b0-284f-4cdd-938f-790b84ee66b3" width="32%" autoplay loop muted playsinline title="RIFE 4.6 & SSIM Deduplication"></video>
+  <video src="https://github.com/user-attachments/assets/affba898-42d5-41e1-869c-4a049063cc09" width="32%" autoplay loop muted playsinline title="Depth Anything V2 Map"></video>
+  <video src=" https://github.com/user-attachments/assets/f2725847-515d-4ee8-9808-671dcf549751" width="32%" autoplay loop muted playsinline title="BiRefNet Background Removal"></video>
 </p>
 <p align="center">
   <em>From left to right: 1. RIFE 4.6 & SSIM Deduplication Pipeline, 2. Depth Anything V2 Map Generation, 3. BiRefNet Background Removal (ProRes 4444 + Alpha).</em>
