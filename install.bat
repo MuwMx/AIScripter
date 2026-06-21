@@ -30,7 +30,7 @@ cd /d "%~dp0"
 :: =====================================================================
 :: 3. TARGET PATHS CONFIGURATION
 :: =====================================================================
-set "ROAMING_TARGET=%APPDATA%\MyScripterAE"
+set "ROAMING_TARGET=%APPDATA%\BackendAI"
 set "AE_TARGET=C:\Program Files\Common Files\Adobe\CEP\extensions\ScripterPanel"
 set "DV_TARGET=C:\Program Files\ScripterDavinci"
 
@@ -78,7 +78,7 @@ echo === [STEP] INITIALIZING AI CORE ARCHITECTURE...
 if not exist "%ROAMING_TARGET%" mkdir "%ROAMING_TARGET%"
 
 echo Syncing core backend scripts from local directory...
-xcopy /E /I /Y "Backend" "%ROAMING_TARGET%"
+xcopy /E /I /Y "Backend" "%ROAMING_TARGET%\backend\"
 
 rem Deploy Isolated Python Engine for Core AI Backend
 if not exist "%ROAMING_TARGET%\python.exe" (

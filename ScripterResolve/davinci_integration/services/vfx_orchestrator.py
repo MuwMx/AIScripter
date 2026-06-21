@@ -6,16 +6,35 @@ import glob
 from pathlib import Path
 
 
+CURRENT_DIR = Path(__file__).resolve().parent
+
+
+
+
+
+ROAMING_ROOT = Path(os.environ['APPDATA']) / "BackendAI"
+PYTHON_EXE = str(ROAMING_ROOT / "python.exe")
+FFMPEG_EXE = str(ROAMING_ROOT / "ffmpeg_shared" / "ffmpeg.exe")
+
+
+CURRENT_FILE = Path(__file__).resolve()
+BACKEND_MAIN = None
+
+
+for parent in CURRENT_FILE.parents[:4]:
+    potential_backend = parent / "Backend" / "main.py"
+    if potential_backend.exists():
+        BACKEND_MAIN = str(potential_backend)
+        break
+
+
+if not BACKEND_MAIN:
+    BACKEND_MAIN = str(ROAMING_ROOT / "backend" / "main.py")
+
+
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOCAL_ROOT = os.path.dirname(os.path.dirname(CURRENT_DIR))
 
-
-ROAMING_ROOT = os.path.join(os.environ['APPDATA'], "MyScripterAE")
-
-
-FFMPEG_EXE = os.path.join(ROAMING_ROOT, "ffmpeg_shared", "ffmpeg.exe")
-PYTHON_EXE = os.path.join(ROAMING_ROOT, "python.exe")
-BACKEND_MAIN = os.path.join(ROAMING_ROOT, "backend", "main.py")
 
 class VFXOrchestrator:
     def __init__(self, repo):

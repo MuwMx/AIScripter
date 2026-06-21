@@ -150,8 +150,12 @@ function executeSingleTask(taskType) {
             
             setStatus(`[${taskType.toUpperCase()}] Exporting layer...`, 5);
             addLog(`Exporting layer to: ${inFileName}`);
-            let safeInputDir = inputDir.replace(/\\/g, '/');
+            let safeInputDir = inputDir.replace(/\\/g, '\\\\');
             let aeResponse = await evalScript(`MyScripterAI.exportLayer('${safeInputDir}', '${inFileName}')`);
+            
+            
+            aeResponse = aeResponse.replace(/\\/g, '/');
+
             let data = JSON.parse(aeResponse);
 
 
@@ -161,11 +165,37 @@ function executeSingleTask(taskType) {
             }
 
             
+            
+            
+            
+            
+            
+
+           
             const roamingPath = csInterface.getSystemPath(SystemPath.USER_DATA);
-            const backendDir = path.join(roamingPath, 'MyScripterAE');
+            const backendDir = path.join(roamingPath, 'BackendAI');
             const pythonExe = path.join(backendDir, 'python.exe');
-            const backendMain = path.join(backendDir, 'backend', 'main.py');
             const inputVideo = data.inputPath;
+
+            
+            const realCurrentPath = fs.realpathSync(__dirname);
+
+            
+            
+            const repoMainPath = path.join(realCurrentPath, '..', 'Backend', 'main.py');
+            
+            
+            
+            
+
+            
+            addLog("DEBUG: Real disk path: " + realCurrentPath);
+            addLog("DEBUG: Checking repo path: " + repoMainPath);
+            addLog("DEBUG: Is file exists? " + fs.existsSync(repoMainPath));
+
+            const backendMain = fs.existsSync(repoMainPath) 
+                ? repoMainPath 
+                : path.join(backendDir, 'backend', 'main.py');
 
             let finalInput = path.resolve(inputVideo);
             let finalOutput = path.resolve(outputVideo);
@@ -245,6 +275,12 @@ async function clearCache() {
     addLog("After Effects memory and disk cache successfully cleared.", "success");
     
     
+    let projDataStr = await evalScript('MyScripterAI.getProjectPath()');
+    if (projDataStr === "null") {
+        showNotification("Save the project to clear local cache folders!", "error");
+        return;
+    }
+    
     let projData = JSON.parse(projDataStr);
     let inputDir = path.join(projData.path, `${projData.name}_Input`);
     let outputDir = path.join(projData.path, `${projData.name}_Output`);
@@ -254,8 +290,12 @@ async function clearCache() {
         if (fs.existsSync(dir)) {
             let files = fs.readdirSync(dir);
             files.forEach(file => {
-                fs.unlinkSync(path.join(dir, file));
-                deletedCount++;
+                try {
+                    fs.unlinkSync(path.join(dir, file));
+                    deletedCount++;
+                } catch(e) {
+                    
+                }
             });
         }
     });
@@ -263,3 +303,30 @@ async function clearCache() {
     setStatus("Cache cleared.", 0);
     addLog(`Cache cleared. Removed ${deletedCount} temporary files.`, 'success');
 }
+
+
+
+
+
+
+
+    
+    
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
