@@ -49,6 +49,7 @@ AIScripter/
 │   ├── backend/
 │   │   └── main.py        # Central CLI controller orchestrator (match-case)
 │   ├── src/               # Core AI modules (rife, dedup, depth, segment)
+│   └── weights/           # Local weights structure (RIFE 4.6 packed out of the box)
 ├── install.bat            # Dynamic components installer script
 └── README.md
 
@@ -76,7 +77,7 @@ The repository uses an automated installation script that dynamically sets up th
    * **After Effects Only:** Installs the Adobe CEP extension panel.
    * **DaVinci Resolve Only:** Sets up the Python PySide6 standalone app wrapper.
 
-The installer automatically downloads an isolated, portable instance of Python embeddable package, deploys `pip`, installs all necessary production-ready libraries (`torch`, `transformers`, `opencv`), pulls optimized static builds of `FFmpeg`/`FFprobe`, and maps everything neatly inside `%APPDATA%\BackendAI`.
+The installer automatically downloads an isolated, portable instance of Python embeddable package, deploys `pip`, installs all necessary production-ready libraries (`torch`, `transformers`, `opencv`), pulls optimized static builds of `FFmpeg`/`FFprobe`, and maps everything neatly inside `%APPDATA%\MyScripterAE`.
 
 ---
 

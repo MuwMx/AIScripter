@@ -20,3 +20,5 @@ weights/*
 
 output/
 *.log
+
+DaVinciResolveScript.py

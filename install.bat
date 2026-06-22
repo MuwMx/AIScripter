@@ -3,7 +3,7 @@ chcp 65001 > nul
 cls
 
 :: =====================================================================
-:: 1. USER CONFIGURATION (PASTE YOUR LINKS HERE)
+:: 1. USER CONFIGURATION
 :: =====================================================================
 set "URL_PYTHON=https://www.python.org/ftp/python/3.13.1/python-3.13.1-embed-amd64.zip"
 set "URL_PYTHON314=https://www.python.org/ftp/python/3.14.0/python-3.14.0-amd64.exe"
@@ -31,7 +31,7 @@ cd /d "%~dp0"
 :: 3. TARGET PATHS CONFIGURATION
 :: =====================================================================
 set "ROAMING_TARGET=%APPDATA%\BackendAI"
-set "AE_TARGET=C:\Program Files\Common Files\Adobe\CEP\extensions\ScripterPanel"
+set "AE_TARGET=C:\Program Files\Common Files\Adobe\CEP\extensions\ScripterAE"
 set "DV_TARGET=C:\Program Files\ScripterDavinci"
 
 :: =====================================================================
@@ -124,12 +124,15 @@ if not exist "%ROAMING_TARGET%\ffmpeg_shared\ffmpeg.exe" (
     echo [SKIP] FFmpeg shared binaries already configured.
 )
 
-if "%choice%"=="1" call :download_all_weights
-if "%choice%"=="2" call :download_ae_weights
-if "%choice%"=="3" call :download_dv_weights
+:: Направление потока скачивания весов в зависимости от выбора
+if "%choice%"=="3" (
+    call :download_dv_weights
+) else (
+    call :download_full_weights
+)
 exit /b
 
-:download_all_weights
+:download_full_weights
 if not exist "%ROAMING_TARGET%\weights\rife4.6" mkdir "%ROAMING_TARGET%\weights\rife4.6"
 if not exist "%ROAMING_TARGET%\weights\depth" mkdir "%ROAMING_TARGET%\weights\depth"
 if not exist "%ROAMING_TARGET%\weights\bg" mkdir "%ROAMING_TARGET%\weights\bg"
@@ -141,50 +144,17 @@ if not exist "%ROAMING_TARGET%\weights\rife4.6\rife46.pth" (
     echo [SKIP] RIFE 4.6 model already exists.
 )
 
-if not exist "%ROAMING_TARGET%\weights\depth\vitb.pth" (
+:: ИСПРАВЛЕНО: Качаем под правильными системными именами для depth_worker.py
+if not exist "%ROAMING_TARGET%\weights\depth\depth_anything_v2_vitb.pth" (
     echo Downloading Depth Anything V2 Base weights...
-    curl -L -o "%ROAMING_TARGET%\weights\depth\vitb.pth" "%URL_DEPTH_BASE%"
+    curl -L -o "%ROAMING_TARGET%\weights\depth\depth_anything_v2_vitb.pth" "%URL_DEPTH_BASE%"
 ) else (
     echo [SKIP] Depth Anything V2 Base weights already exist.
 )
 
-if not exist "%ROAMING_TARGET%\weights\depth\vitl.pth" (
+if not exist "%ROAMING_TARGET%\weights\depth\depth_anything_v2_vitl.pth" (
     echo Downloading Depth Anything V2 Large weights...
-    curl -L -o "%ROAMING_TARGET%\weights\depth\vitl.pth" "%URL_DEPTH_LARGE%"
-) else (
-    echo [SKIP] Depth Anything V2 Large weights already exist.
-)
-
-if not exist "%ROAMING_TARGET%\weights\bg\birefnet_finetuned_toonout.pth" (
-    echo Downloading BiRefNet Background Extraction weights...
-    curl -L -o "%ROAMING_TARGET%\weights\bg\birefnet_finetuned_toonout.pth" "%URL_BIREFNET_MODEL%"
-) else (
-    echo [SKIP] BiRefNet weights already exist.
-)
-exit /b
-
-:download_ae_weights
-if not exist "%ROAMING_TARGET%\weights\rife4.6" mkdir "%ROAMING_TARGET%\weights\rife4.6"
-if not exist "%ROAMING_TARGET%\weights\depth" mkdir "%ROAMING_TARGET%\weights\depth"
-if not exist "%ROAMING_TARGET%\weights\bg" mkdir "%ROAMING_TARGET%\weights\bg"
-
-if not exist "%ROAMING_TARGET%\weights\rife4.6\rife46.pth" (
-    echo Downloading RIFE 4.6 model file...
-    curl -L -o "%ROAMING_TARGET%\weights\rife4.6\rife46.pth" "%URL_RIFE%"
-) else (
-    echo [SKIP] RIFE 4.6 model already exists.
-)
-
-if not exist "%ROAMING_TARGET%\weights\depth\vitb.pth" (
-    echo Downloading Depth Anything V2 Base weights...
-    curl -L -o "%ROAMING_TARGET%\weights\depth\vitb.pth" "%URL_DEPTH_BASE%"
-) else (
-    echo [SKIP] Depth Anything V2 Base weights already exist.
-)
-
-if not exist "%ROAMING_TARGET%\weights\depth\vitl.pth" (
-    echo Downloading Depth Anything V2 Large weights...
-    curl -L -o "%ROAMING_TARGET%\weights\depth\vitl.pth" "%URL_DEPTH_LARGE%"
+    curl -L -o "%ROAMING_TARGET%\weights\depth\depth_anything_v2_vitl.pth" "%URL_DEPTH_LARGE%"
 ) else (
     echo [SKIP] Depth Anything V2 Large weights already exist.
 )
